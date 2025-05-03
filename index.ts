@@ -67,6 +67,19 @@ export interface InsertIntoOptions {
     returning?: boolean;
 }
 
+/** Options for inserting into a table. */
+export interface InsertIntoDataOptions {
+    /** Add RETURNING clause to the query. */
+    returning?: boolean;
+}
+
+
+/** Options for updating data in a table. */
+export interface UpdateDataOptions {
+    /** Add RETURNING clause to the query. */
+    returning?: boolean;
+}
+
 /** Options for setting up table indexes. */
 export interface SetupTableIndexOptions {
   /** Column name for the primary key. */
@@ -557,12 +570,12 @@ export function updateData(
     where: RowData,
     op: string = '=',
     sep: string = 'AND',
-    returning: boolean = false
+    opt: UpdateDataOptions = {}
 ): QueryData {
     const par: unknown[] = [];
     const setStr = formatData(set || {}, '"%k" = $%i', ', ', 1, par);
     const exp = formatData(where || {}, `"%k" ${op} $%i`, ` ${sep} `, par.length + 1, par);
-    const returningClause = returning ? ' RETURNING *' : '';
+    const returningClause = opt.returning ? ' RETURNING *' : '';
     return {
         query: `UPDATE "${table}" SET ${setStr}${exp ? ' WHERE ' + exp : ''}${returningClause};`,
         data: par
@@ -600,11 +613,11 @@ export function selectData(tab: string, whr: RowData, op: string='=', sep: strin
  * // → { query: 'INSERT INTO "users" ("name", "age") VALUES ($1, $2) RETURNING *;', data: ["Bob", 30] }
  * ```
  */
-export function insertIntoData(table: string, rows: RowData[], returning: boolean = false): QueryData {
+export function insertIntoData(table: string, rows: RowData[], opt: InsertIntoDataOptions = {}): QueryData {
     const par: unknown[] = [];
     const into = formatData(rows[0] || {}, '"%k"', ', ', 1, par);
     const rowsStr = formatData(par as unknown as RowData, '$%i', ', ', 1);
-    const returningClause = returning ? ' RETURNING *' : '';
+    const returningClause = opt.returning ? ' RETURNING *' : '';
     return {
         query: `INSERT INTO "${table}" (${into}) VALUES (${rowsStr})${returningClause};`,
         data: par
