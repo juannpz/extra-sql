@@ -156,7 +156,7 @@ export interface FunctionConfig<
     SourceColumn extends string = string,
     SelectColumns extends string = string
 > {
-    returnType: string;
+    returnType?: string;
     language?: string;
     trackNewValues?: Partial<Record<TrackColumn, boolean>>;
     trackOldValues?: Partial<Record<TrackColumn, boolean>>;
@@ -904,7 +904,7 @@ export function createFunctionAndTrigger<
         }).filter(Boolean).join(', ');
     }
     
-    sql += `) RETURNS ${config.returnType} AS $$\n`;
+    sql += `) RETURNS ${config.returnType || 'TRIGGER'} AS $$\n`;
     
     // If custom body is provided, use it
     if (config.customBody) {
