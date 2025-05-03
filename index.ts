@@ -149,29 +149,25 @@ export enum ColumnDefaultValue {
 }
 
 export interface JoinTableConfig<
-    JoinTableName extends string = string,
     JoinColumn extends string = string,
     SourceColumn extends string = string,
     SelectColumns extends string = string
 > {
-    table: JoinTableName;
     joinColumn: JoinColumn;
     sourceColumn: SourceColumn;
-    selectColumns: SelectColumns[];
+    selectColumns: Record<SelectColumns, boolean>;
     condition?: string;
 }
 
 export interface TriggerDefinition<TableName extends string = string> {
     tableName: TableName;
-    triggerName: string;
     timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF';
-    events: Array<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE'>;
+    events: Record<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE', boolean>;
     forEach: 'ROW' | 'STATEMENT';
     condition?: string;
 }
 
 export interface FunctionParameter {
-    name: string;
     type: string;
     defaultValue?: string;
 }
@@ -186,13 +182,13 @@ export interface FunctionConfig<
 > {
     returnType: string;
     language?: string;
-    trackNewValues?: TrackColumn[];
-    trackOldValues?: TrackColumn[];
-    joinTables?: JoinTableConfig<JoinTableName, JoinColumn, SourceColumn, SelectColumns>[];
+    trackNewValues?: Record<TrackColumn, boolean>;
+    trackOldValues?: Record<TrackColumn, boolean>;
+    joinTables?: Record<JoinTableName, JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>>;
     channelName?: string;
     customBody?: string;
-    triggers: TriggerDefinition<TableName>[];
-    functionParams?: FunctionParameter[];
+    triggers: Record<string, TriggerDefinition<TableName>>;
+    functionParams?: Record<string, FunctionParameter>;
 }
 
 //#region HELPERS
@@ -839,73 +835,46 @@ export function applyColumnConstraints<
  *   {
  *     returnType: 'TRIGGER',
  *     language: 'plpgsql',
- *     trackNewValues: ['name', 'email', 'role'],
- *     trackOldValues: ['role'],
- *     joinTables: [
- *       {
- *         table: 'user_profiles',
+ *     trackNewValues: {
+ *       name: true,
+ *       email: true,
+ *       role: true
+ *     },
+ *     trackOldValues: {
+ *       role: true
+ *     },
+ *     joinTables: {
+ *       user_profiles: {
  *         joinColumn: 'user_id',
  *         sourceColumn: 'id',
- *         selectColumns: ['avatar_url', 'bio']
+ *         selectColumns: {
+ *           avatar_url: true,
+ *           bio: true
+ *         },
+ *         condition: "active = true"
  *       }
- *     ],
+ *     },
  *     channelName: 'user_changes',
- *     triggers: [{
- *       tableName: 'users',
- *       triggerName: 'user_change_trigger',
- *       timing: 'AFTER',
- *       events: ['UPDATE', 'INSERT'],
- *       forEach: 'ROW'
- *     }],
- *     functionParams: []
+ *     triggers: {
+ *       user_change_trigger: {
+ *         tableName: 'users',
+ *         timing: 'AFTER',
+ *         events: {
+ *           UPDATE: true,
+ *           INSERT: true
+ *         },
+ *         forEach: 'ROW',
+ *         condition: "NEW.role <> 'guest'"
+ *       }
+ *     },
+ *     functionParams: {
+ *       include_metadata: {
+ *         type: 'BOOLEAN',
+ *         defaultValue: 'TRUE'
+ *       }
+ *     }
  *   }
  * );
- * // → CREATE OR REPLACE FUNCTION notify_user_change() RETURNS TRIGGER AS $$
- * // → DECLARE
- * // →   payload JSONB;
- * // →   user_profiles_data JSONB;
- * // → BEGIN
- * // →   -- Initialize the payload
- * // →   payload = jsonb_build_object(
- * // →     'table', TG_TABLE_NAME,
- * // →     'action', TG_OP,
- * // →     'new_values', jsonb_build_object(
- * // →       'name', NEW.name,
- * // →       'email', NEW.email,
- * // →       'role', NEW.role
- * // →     )
- * // →   );
- * // →   
- * // →   -- Add old values for UPDATE operations
- * // →   IF TG_OP = 'UPDATE' THEN
- * // →     payload = payload || jsonb_build_object(
- * // →       'old_values', jsonb_build_object(
- * // →         'role', OLD.role
- * // →       )
- * // →     );
- * // →   END IF;
- * // →   
- * // →   -- Join with user_profiles table
- * // →   SELECT jsonb_build_object(
- * // →     'avatar_url', avatar_url,
- * // →     'bio', bio
- * // →   ) INTO user_profiles_data
- * // →   FROM user_profiles
- * // →   WHERE user_id = NEW.id;
- * // →   
- * // →   -- Add joined data to payload
- * // →   payload = payload || jsonb_build_object('user_profiles', user_profiles_data);
- * // →   
- * // →   -- Send notification
- * // →   PERFORM pg_notify('user_changes', payload::text);
- * // →   RETURN NEW;
- * // → END;
- * // → $$ LANGUAGE plpgsql;
- * // → 
- * // → CREATE OR REPLACE TRIGGER user_change_trigger
- * // → AFTER UPDATE OR INSERT ON "users"
- * // → FOR EACH ROW
- * // → EXECUTE FUNCTION notify_user_change();
  */
 export function createFunctionAndTrigger<
     TrackColumn extends string = string,
@@ -922,11 +891,11 @@ export function createFunctionAndTrigger<
     let sql = `CREATE OR REPLACE FUNCTION ${functionName}(`;
     
     // Add parameters if they exist
-    if (config.functionParams && config.functionParams.length > 0) {
-        sql += config.functionParams.map(param => {
-            let paramDef = `${param.name} ${param.type}`;
-            if (param.defaultValue !== undefined) {
-                paramDef += ` DEFAULT ${param.defaultValue}`;
+    if (config.functionParams && Object.keys(config.functionParams).length > 0) {
+        sql += Object.entries(config.functionParams).map(([paramName, paramConfig]) => {
+            let paramDef = `${paramName} ${paramConfig.type}`;
+            if (paramConfig.defaultValue !== undefined) {
+                paramDef += ` DEFAULT ${paramConfig.defaultValue}`;
             }
             return paramDef;
         }).join(', ');
@@ -941,18 +910,21 @@ export function createFunctionAndTrigger<
         // Generate function body based on configuration
         let functionBody = '';
         
+        // Get tracked columns as arrays for convenience
+        const trackNewColumns = config.trackNewValues ? Object.keys(config.trackNewValues).filter(key => config.trackNewValues![key as TrackColumn]) : [];
+        const trackOldColumns = config.trackOldValues ? Object.keys(config.trackOldValues).filter(key => config.trackOldValues![key as TrackColumn]) : [];
+        const joinTableNames = config.joinTables ? Object.keys(config.joinTables) : [];
+        
         // Declare section for variables if needed
-        const needsDeclare = (config.joinTables && config.joinTables.length > 0) || 
-                            (config.trackNewValues && config.trackNewValues.length > 0) || 
-                            (config.trackOldValues && config.trackOldValues.length > 0);
+        const needsDeclare = joinTableNames.length > 0 || trackNewColumns.length > 0 || trackOldColumns.length > 0;
         
         if (needsDeclare) {
             functionBody += "DECLARE\n  payload JSONB;\n";
             
             // Add variables for join results
-            if (config.joinTables && config.joinTables.length > 0) {
-                config.joinTables.forEach(join => {
-                    functionBody += `  ${join.table}_data JSONB;\n`;
+            if (joinTableNames.length > 0) {
+                joinTableNames.forEach(tableName => {
+                    functionBody += `  ${tableName}_data JSONB;\n`;
                 });
             }
             
@@ -965,11 +937,11 @@ export function createFunctionAndTrigger<
             functionBody += "    'action', TG_OP";
             
             // Add new values tracking
-            if (config.trackNewValues && config.trackNewValues.length > 0) {
+            if (trackNewColumns.length > 0) {
                 functionBody += ",\n    'new_values', jsonb_build_object(\n";
                 
                 // Add each tracked column
-                functionBody += config.trackNewValues.map(col => 
+                functionBody += trackNewColumns.map(col => 
                     `      '${col}', NEW.${col}`
                 ).join(',\n');
                 
@@ -979,14 +951,14 @@ export function createFunctionAndTrigger<
             functionBody += "\n  );\n\n";
             
             // Add old values tracking for UPDATE operations
-            if (config.trackOldValues && config.trackOldValues.length > 0) {
+            if (trackOldColumns.length > 0) {
                 functionBody += "  -- Add old values for UPDATE operations\n";
                 functionBody += "  IF TG_OP = 'UPDATE' THEN\n";
                 functionBody += "    payload = payload || jsonb_build_object(\n";
                 functionBody += "      'old_values', jsonb_build_object(\n";
                 
                 // Add each tracked old column
-                functionBody += config.trackOldValues.map(col => 
+                functionBody += trackOldColumns.map(col => 
                     `        '${col}', OLD.${col}`
                 ).join(',\n');
                 
@@ -996,18 +968,22 @@ export function createFunctionAndTrigger<
             }
             
             // Process joins
-            if (config.joinTables && config.joinTables.length > 0) {
-                config.joinTables.forEach(join => {
-                    functionBody += `  -- Join with ${join.table} table\n`;
+            if (joinTableNames.length > 0) {
+                joinTableNames.forEach(tableName => {
+                    const join = config.joinTables![tableName as JoinTableName];
+                    const selectColumnNames = Object.keys(join.selectColumns)
+                        .filter(key => join.selectColumns[key as SelectColumns]);
+                    
+                    functionBody += `  -- Join with ${tableName} table\n`;
                     functionBody += `  SELECT jsonb_build_object(\n`;
                     
                     // Add each selected column
-                    functionBody += join.selectColumns.map(col => 
+                    functionBody += selectColumnNames.map(col => 
                         `    '${col}', ${col}`
                     ).join(',\n');
                     
-                    functionBody += `\n  ) INTO ${join.table}_data\n`;
-                    functionBody += `  FROM ${join.table}\n`;
+                    functionBody += `\n  ) INTO ${tableName}_data\n`;
+                    functionBody += `  FROM ${tableName}\n`;
                     functionBody += `  WHERE ${join.joinColumn} = NEW.${join.sourceColumn}`;
                     
                     if (join.condition) {
@@ -1018,7 +994,7 @@ export function createFunctionAndTrigger<
                     
                     // Add joined data to payload
                     functionBody += `  -- Add joined data to payload\n`;
-                    functionBody += `  payload = payload || jsonb_build_object('${join.table}', ${join.table}_data);\n\n`;
+                    functionBody += `  payload = payload || jsonb_build_object('${tableName}', ${tableName}_data);\n\n`;
                 });
             }
             
@@ -1058,9 +1034,16 @@ export function createFunctionAndTrigger<
     sql += `\n$$ LANGUAGE ${config.language || 'plpgsql'};\n`;
     
     // Create the associated triggers
-    for (const trigger of config.triggers) {
-        sql += `\nCREATE OR REPLACE TRIGGER ${trigger.triggerName}\n`;
-        sql += `${trigger.timing} ${trigger.events.join(' OR ')} ON "${trigger.tableName}"\n`;
+    for (const [triggerName, trigger] of Object.entries(config.triggers)) {
+        sql += `\nCREATE OR REPLACE TRIGGER ${triggerName}\n`;
+        sql += `${trigger.timing} `;
+        
+        // Process events
+        const events = Object.entries(trigger.events)
+            .filter(([_, isEnabled]) => isEnabled)
+            .map(([eventName, _]) => eventName);
+        
+        sql += `${events.join(' OR ')} ON "${trigger.tableName}"\n`;
         sql += `FOR EACH ${trigger.forEach}\n`;
         
         if (trigger.condition) {
