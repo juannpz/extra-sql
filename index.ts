@@ -919,13 +919,13 @@ export function createFunctionAndTrigger<
 ): string {
     // Create the function definition
     let sql = `CREATE OR REPLACE FUNCTION ${functionName}(`;
-    
+
     // Add parameters if they exist
     if (config.functionParams && Object.keys(config.functionParams).length > 0) {
         sql += Object.entries(config.functionParams).map(([paramName, paramConfig]) => {
             // Verificar que paramConfig no sea undefined
             if (!paramConfig) return '';
-            
+
             let paramDef = `${paramName} ${paramConfig.type}`;
             if (paramConfig.defaultValue !== undefined) {
                 paramDef += ` DEFAULT ${paramConfig.defaultValue}`;
@@ -933,163 +933,181 @@ export function createFunctionAndTrigger<
             return paramDef;
         }).filter(Boolean).join(', ');
     }
-    
+
     sql += `) RETURNS ${config.returnType || 'TRIGGER'} AS $$\n`;
-    
+
+    // Determine if this is a trigger function (either explicitly specified or by default)
+    const isTriggerFunction = config.returnType === undefined || config.returnType === 'TRIGGER';
+
     // If custom body is provided, use it
     if (config.customBody) {
         sql += config.customBody;
     } else {
         // Generate function body based on configuration
         let functionBody = '';
-        
+
         // Get tracked columns as arrays for convenience
         const trackNewColumns = config.trackNewValues ? Object.keys(config.trackNewValues).filter(key => config.trackNewValues![key as TrackColumn]) : [];
         const trackOldColumns = config.trackOldValues ? Object.keys(config.trackOldValues).filter(key => config.trackOldValues![key as TrackColumn]) : [];
         const joinTableNames = config.joinTables ? Object.keys(config.joinTables) : [];
-        
+
         // Declare section for variables if needed
         const needsDeclare = joinTableNames.length > 0 || trackNewColumns.length > 0 || trackOldColumns.length > 0;
-        
+
         if (needsDeclare) {
             functionBody += "DECLARE\n  payload JSONB;\n";
-            
+
             // Add variables for join results
             if (joinTableNames.length > 0) {
                 joinTableNames.forEach(tableName => {
                     functionBody += `  ${tableName}_data JSONB;\n`;
                 });
             }
-            
+
             functionBody += "BEGIN\n";
-            
+
             // Initialize the payload
             functionBody += "  -- Initialize the payload\n";
             functionBody += "  payload = jsonb_build_object(\n";
             functionBody += "    'table', TG_TABLE_NAME,\n";
             functionBody += "    'action', TG_OP";
-            
+
             // Add new values tracking
             if (trackNewColumns.length > 0) {
                 functionBody += ",\n    'new_values', jsonb_build_object(\n";
-                
+
                 // Add each tracked column
-                functionBody += trackNewColumns.map(col => 
+                functionBody += trackNewColumns.map(col =>
                     `      '${col}', NEW.${col}`
                 ).join(',\n');
-                
+
                 functionBody += "\n    )";
             }
-            
+
             functionBody += "\n  );\n\n";
-            
+
             // Add old values tracking for UPDATE operations
             if (trackOldColumns.length > 0) {
                 functionBody += "  -- Add old values for UPDATE operations\n";
                 functionBody += "  IF TG_OP = 'UPDATE' THEN\n";
                 functionBody += "    payload = payload || jsonb_build_object(\n";
                 functionBody += "      'old_values', jsonb_build_object(\n";
-                
+
                 // Add each tracked old column
-                functionBody += trackOldColumns.map(col => 
+                functionBody += trackOldColumns.map(col =>
                     `        '${col}', OLD.${col}`
                 ).join(',\n');
-                
+
                 functionBody += "\n      )\n";
                 functionBody += "    );\n";
                 functionBody += "  END IF;\n\n";
             }
-            
+
             // Process joins
             if (joinTableNames.length > 0 && config.joinTables) {
                 joinTableNames.forEach(tableName => {
                     const join = config.joinTables?.[tableName as JoinTableName];
-                    
+
                     // Verificar que join no sea undefined
                     if (!join) return;
-                    
+
                     const selectColumnNames = Object.keys(join.selectColumns)
                         .filter(key => join.selectColumns[key as SelectColumns]);
-                    
+
                     functionBody += `  -- Join with ${tableName} table\n`;
                     functionBody += `  SELECT jsonb_build_object(\n`;
-                    
+
                     // Add each selected column
-                    functionBody += selectColumnNames.map(col => 
+                    functionBody += selectColumnNames.map(col =>
                         `    '${col}', ${col}`
                     ).join(',\n');
-                    
+
                     functionBody += `\n  ) INTO ${tableName}_data\n`;
                     functionBody += `  FROM ${tableName}\n`;
                     functionBody += `  WHERE ${join.joinColumn} = NEW.${join.sourceColumn}`;
-                    
+
                     if (join.condition) {
                         functionBody += ` AND ${join.condition}`;
                     }
-                    
+
                     functionBody += `;\n\n`;
-                    
+
                     // Add joined data to payload
                     functionBody += `  -- Add joined data to payload\n`;
                     functionBody += `  payload = payload || jsonb_build_object('${tableName}', ${tableName}_data);\n\n`;
                 });
             }
-            
+
             // Add notification if channel is specified
             if (config.channelName) {
                 functionBody += `  -- Send notification\n`;
-                functionBody += `  PERFORM pg_notify('${config.channelName}', payload::text);\n`;
+                functionBody += `  PERFORM pg_notify('${config.channelName}', payload::text);\n\n`;
             }
-            
-            // Return NEW for trigger functions
-            if (config.returnType === 'TRIGGER') {
+
+            // Always add an appropriate RETURN statement for trigger functions
+            if (isTriggerFunction) {
+                functionBody += "  -- Return for trigger function\n";
                 functionBody += "  RETURN NEW;\n";
+            } else {
+                // For non-trigger functions, add a generic RETURN
+                functionBody += "  -- Return for non-trigger function\n";
+                functionBody += "  RETURN;\n";
             }
-            
+
             functionBody += "END;";
         } else {
-            // Simple default body for trigger functions
-            if (config.returnType === 'TRIGGER') {
-                functionBody = "BEGIN\n";
-                
-                if (config.channelName) {
-                    functionBody += `  PERFORM pg_notify('${config.channelName}', row_to_json(NEW)::text);\n`;
+            // Simple body without declarations
+            functionBody = "BEGIN\n";
+
+            // Add notification to empty function if channel is specified
+            if (config.channelName) {
+                if (isTriggerFunction) {
+                    functionBody += `  PERFORM pg_notify('${config.channelName}', row_to_json(NEW)::text);\n\n`;
+                } else {
+                    functionBody += `  PERFORM pg_notify('${config.channelName}', '{}'::text);\n\n`;
                 }
-                
-                functionBody += "  RETURN NEW;\n";
-                functionBody += "END;";
-            } else {
-                // Empty function for non-trigger returns
-                functionBody = "BEGIN\n  RETURN;\nEND;";
             }
+
+            // Always add appropriate RETURN statement
+            if (isTriggerFunction) {
+                functionBody += "  -- Return for trigger function\n";
+                functionBody += "  RETURN NEW;\n";
+            } else {
+                functionBody += "  -- Return for non-trigger function\n";
+                functionBody += "  RETURN;\n";
+            }
+
+            functionBody += "END;";
         }
-        
+
         sql += functionBody;
     }
-    
+
     // Close function definition
     sql += `\n$$ LANGUAGE ${config.language || 'plpgsql'};\n`;
-    
+
     // Create the associated triggers
-    for (const [triggerName, trigger] of Object.entries(config.triggers)) {
-        sql += `\nCREATE OR REPLACE TRIGGER ${triggerName}\n`;
-        sql += `${trigger.timing} `;
-        
-        // Process events
-        const events = Object.entries(trigger.events)
-            .filter(([_, isEnabled]) => isEnabled)
-            .map(([eventName, _]) => eventName);
-        
-        sql += `${events.join(' OR ')} ON "${trigger.tableName}"\n`;
-        sql += `FOR EACH ${trigger.forEach}\n`;
-        
-        if (trigger.condition) {
-            sql += `WHEN (${trigger.condition})\n`;
+    if (config.triggers) {
+        for (const [triggerName, trigger] of Object.entries(config.triggers)) {
+            sql += `\nCREATE OR REPLACE TRIGGER ${triggerName}\n`;
+            sql += `${trigger.timing} `;
+
+            // Process events
+            const events = Object.entries(trigger.events)
+                .filter(([_, isEnabled]) => isEnabled)
+                .map(([eventName, _]) => eventName);
+
+            sql += `${events.join(' OR ')} ON "${trigger.tableName}"\n`;
+            sql += `FOR EACH ${trigger.forEach}\n`;
+
+            if (trigger.condition) {
+                sql += `WHEN (${trigger.condition})\n`;
+            }
+
+            sql += `EXECUTE FUNCTION ${functionName}();\n`;
         }
-        
-        sql += `EXECUTE FUNCTION ${functionName}();\n`;
     }
-    
+
     return sql;
 }
 
