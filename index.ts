@@ -123,8 +123,30 @@ export interface QueryData {
 }
 //#endregion
 
+export interface ForeignKeyConstraint<TargetTable = string, TargetColumn = string> {
+    table: TargetTable;
+    column: TargetColumn;
+    onDelete?: 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
+    onUpdate?: 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
+}
 
+export interface ColumnConstraints {
+    notNull?: boolean;
+    default?: ColumnDefaultValue;
+    unique?: boolean;
+}
 
+export enum ColumnDefaultValue {
+    CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP",
+    NOW = "NOW()",
+    NULL = "NULL",
+    TRUE = "TRUE",
+    FALSE = "FALSE",
+    ZERO = "0",
+    EMPTY_STRING = "''",
+    EMPTY_JSONB = "'{}'",
+    ONE = "1"
+}
 
 //#region HELPERS
 /**
@@ -547,7 +569,211 @@ export function deleteData(table: string, where: RowData, op: string='=', sep: s
   };
 }
 
+/**
+ * Converts nested objects within an iterable collection to JSON strings.
+ * This function takes any iterable collection of objects and transforms any
+ * nested object (that is not an Array or Date) into its JSON string representation.
+ * 
+ * @param data - An iterable collection of objects that may contain nested objects
+ * @returns An array of objects with nested objects converted to JSON strings
+ * 
+ * @example
+ * // Converts the nested 'metadata' object to a JSON string
+ * stringifyObjectsInIterable([
+ *   { id: 1, metadata: { name: "test" } }
+ * ]); 
+ * // Returns [{ id: 1, metadata: '{"name":"test"}' }]
+ */
+export function stringifyObjectsInIterable(data: Iterable<Record<string, unknown>>): Record<string, unknown>[] {
+    const items = Array.isArray(data) ? data : Array.from(data);
 
+    return items.map(item => {
+        const stringifiedItem: Record<string, unknown> = {};
+
+        for (const [key, value] of Object.entries(item)) {
+            const isObject = value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
+
+            if (isObject)
+                stringifiedItem[key] = JSON.stringify(value);
+            else
+                stringifiedItem[key] = value;
+        }
+
+        return stringifiedItem;
+    });
+}
+
+/**
+ * Removes null or undefined properties from an iterable collection of objects.
+ * This function processes each object in the collection and removes any property
+ * whose value is null or undefined, generating new clean objects.
+ * 
+ * @param data - An iterable collection of objects that may contain null or undefined properties
+ * @returns An array of objects without null or undefined properties
+ * 
+ * @example
+ * // Removes the 'optional' property which is undefined
+ * removeNullAndUndefinedFromIterable([
+ *   { id: 1, name: "test", optional: undefined }
+ * ]); 
+ * // Returns [{ id: 1, name: "test" }]
+ */
+export function removeNullAndUndefinedFromIterable(data: Iterable<Record<string, unknown>>): Record<string, unknown>[] {
+    const items = Array.isArray(data) ? data : Array.from(data);
+
+    return items.map(item => {
+        const cleanItem: Record<string, unknown> = {};
+
+        for (const [key, value] of Object.entries(item)) {
+            if (value !== null && value !== undefined)
+                cleanItem[key] = value;
+        }
+
+        return cleanItem;
+    });
+}
+
+/**
+ * Converts nested objects within an object to JSON strings.
+ * This function examines each property of the object and transforms any
+ * nested object (that is not an Array or Date) into its JSON string representation.
+ * 
+ * @param data - An object that may contain nested objects
+ * @returns An object with nested objects converted to JSON strings
+ * 
+ * @example
+ * // Converts the nested 'config' object to a JSON string
+ * stringifyObjectsInObject({
+ *   id: 1,
+ *   config: { theme: "dark", notifications: true }
+ * }); 
+ * // Returns { id: 1, config: '{"theme":"dark","notifications":true}' }
+ */
+export function stringifyObjectsInObject(data: Record<string, unknown>): Record<string, unknown> {
+    const stringifiedObject: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+        const isObject = value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
+
+        if (isObject)
+            stringifiedObject[key] = JSON.stringify(value);
+        else
+            stringifiedObject[key] = value;
+    }
+
+    return stringifiedObject;
+}
+
+/**
+ * Removes null or undefined properties from an object.
+ * This function processes the object and removes any property
+ * whose value is null or undefined, generating a new clean object.
+ * 
+ * @param data - An object that may contain null or undefined properties
+ * @returns An object without null or undefined properties
+ * 
+ * @example
+ * // Removes the 'description' property which is null
+ * removeNullAndUndefinedFromObject({
+ *   id: 1,
+ *   name: "test",
+ *   description: null
+ * }); 
+ * // Returns { id: 1, name: "test" }
+ */
+export function removeNullAndUndefinedFromObject(data: Record<string, unknown>): Record<string, unknown> {
+    const cleanObject: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+        if (value !== null && value !== undefined)
+            cleanObject[key] = value;
+    }
+
+    return cleanObject;
+}
+
+/**
+ * Applies column constraints and foreign key relationships to a SQL CREATE TABLE query.
+ * This function enhances a basic CREATE TABLE query by adding NOT NULL, DEFAULT, UNIQUE constraints,
+ * and foreign key relationships. It supports TypeScript generics for type-safe constraint definition.
+ * 
+ * @param query - The original CREATE TABLE SQL query string
+ * @param constraints - A partial record mapping column names to their constraints (NOT NULL, DEFAULT, UNIQUE)
+ * @param foreignKeys - Optional partial record mapping column names to their foreign key relationships
+ * @returns A modified SQL query string with all constraints applied
+ * 
+ * @example
+ * // Adds NOT NULL, DEFAULT constraints and a foreign key relationship
+ * applyColumnConstraints(
+ *   'CREATE TABLE "user_credentials" ("identity_id" SERIAL, "user_id" INTEGER)',
+ *   {
+ *     user_id: { notNull: true, unique: true }
+ *   },
+ *   {
+ *     user_id: {
+ *       table: 'users',
+ *       column: 'user_id',
+ *       onDelete: 'CASCADE',
+ *       onUpdate: 'CASCADE'
+ *     }
+ *   }
+ * );
+ * // Returns a SQL query with NOT NULL, UNIQUE constraints and foreign key definition
+ */
+export function applyColumnConstraints<
+    SourceColumn extends string = string,
+    TargetTable extends string = string,
+    TargetColumn extends string = string
+>(
+    query: string,
+    constraints: Partial<Record<SourceColumn, ColumnConstraints>>,
+    foreignKeys?: Partial<Record<SourceColumn, ForeignKeyConstraint<TargetTable, TargetColumn>>>
+): string {
+    let modifiedQuery = query;
+
+    for (const [columnName, columnConstraints] of Object.entries(constraints) as [SourceColumn, ColumnConstraints][]) {
+        const pattern = new RegExp(`"${columnName}"\\s+([^,)]+?)(?=,|\\)|$)`);
+
+        modifiedQuery = modifiedQuery.replace(pattern, (match) => {
+            let result = match.trim();
+
+            if (columnConstraints.notNull && !result.includes('NOT NULL'))
+                result += ' NOT NULL';
+
+            if (columnConstraints.default && !result.includes('DEFAULT'))
+                result += ` DEFAULT ${columnConstraints.default}`;
+
+            if (columnConstraints.unique && !result.includes('UNIQUE'))
+                result += ' UNIQUE';
+
+            return result;
+        });
+    }
+
+    if (foreignKeys && Object.keys(foreignKeys).length > 0) {
+        const lastParenIndex = modifiedQuery.lastIndexOf(')');
+
+        if (lastParenIndex !== -1) {
+            const foreignKeysConstraints = (Object.entries(foreignKeys) as [SourceColumn, ForeignKeyConstraint<TargetTable, TargetColumn>][])
+                .map(([columnName, fkInfo]) => {
+                    let constraint = `,\n  CONSTRAINT "fk_${columnName}" FOREIGN KEY ("${columnName}") `;
+                    constraint += `REFERENCES ${fkInfo.table}("${fkInfo.column}")`;
+
+                    if (fkInfo.onDelete)
+                        constraint += ` ON DELETE ${fkInfo.onDelete}`;
+
+                    if (fkInfo.onUpdate)
+                        constraint += ` ON UPDATE ${fkInfo.onUpdate}`;
+
+                    return constraint;
+                }).join('');
+
+            modifiedQuery = modifiedQuery.slice(0, lastParenIndex) + foreignKeysConstraints + modifiedQuery.slice(lastParenIndex);
+        }
+    }
+
+    return modifiedQuery;
+}
 
 
 // /**

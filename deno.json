@@ -1,6 +1,6 @@
 {
-  "name": "@nodef/extra-sql",
-  "version": "0.1.2",
+  "name": "@juannpz/extra-sql",
+  "version": "0.0.1",
   "license": "MIT",
   "exports": "./index.ts"
 }
