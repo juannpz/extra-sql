@@ -148,6 +148,53 @@ export enum ColumnDefaultValue {
     ONE = "1"
 }
 
+export interface JoinTableConfig<
+    JoinTableName extends string = string,
+    JoinColumn extends string = string,
+    SourceColumn extends string = string,
+    SelectColumns extends string = string
+> {
+    table: JoinTableName;
+    joinColumn: JoinColumn;
+    sourceColumn: SourceColumn;
+    selectColumns: SelectColumns[];
+    condition?: string;
+}
+
+export interface TriggerDefinition<TableName extends string = string> {
+    tableName: TableName;
+    triggerName: string;
+    timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF';
+    events: Array<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE'>;
+    forEach: 'ROW' | 'STATEMENT';
+    condition?: string;
+}
+
+export interface FunctionParameter {
+    name: string;
+    type: string;
+    defaultValue?: string;
+}
+
+export interface FunctionConfig<
+    TrackColumn extends string = string,
+    TableName extends string = string,
+    JoinTableName extends string = string,
+    JoinColumn extends string = string,
+    SourceColumn extends string = string,
+    SelectColumns extends string = string
+> {
+    returnType: string;
+    language?: string;
+    trackNewValues?: TrackColumn[];
+    trackOldValues?: TrackColumn[];
+    joinTables?: JoinTableConfig<JoinTableName, JoinColumn, SourceColumn, SelectColumns>[];
+    channelName?: string;
+    customBody?: string;
+    triggers: TriggerDefinition<TableName>[];
+    functionParams?: FunctionParameter[];
+}
+
 //#region HELPERS
 /**
  * Ensure a value is an array.
@@ -773,6 +820,257 @@ export function applyColumnConstraints<
     }
 
     return modifiedQuery;
+}
+
+
+/**
+ * Generates SQL commands to create functions and triggers in PostgreSQL with advanced configuration options.
+ * This function allows defining PostgreSQL functions and associating them with triggers
+ * on specific tables with highly configurable parameters including column selection and cross-table references.
+ * 
+ * @param functionName - Name of the function to create
+ * @param config - Configuration object for the function and triggers
+ * @returns SQL commands to create the function and its associated triggers
+ * 
+ * @example
+ * // Creates a notification function that tracks changes in specific columns
+ * createFunctionAndTrigger(
+ *   'notify_user_change',
+ *   {
+ *     returnType: 'TRIGGER',
+ *     language: 'plpgsql',
+ *     trackNewValues: ['name', 'email', 'role'],
+ *     trackOldValues: ['role'],
+ *     joinTables: [
+ *       {
+ *         table: 'user_profiles',
+ *         joinColumn: 'user_id',
+ *         sourceColumn: 'id',
+ *         selectColumns: ['avatar_url', 'bio']
+ *       }
+ *     ],
+ *     channelName: 'user_changes',
+ *     triggers: [{
+ *       tableName: 'users',
+ *       triggerName: 'user_change_trigger',
+ *       timing: 'AFTER',
+ *       events: ['UPDATE', 'INSERT'],
+ *       forEach: 'ROW'
+ *     }],
+ *     functionParams: []
+ *   }
+ * );
+ * // → CREATE OR REPLACE FUNCTION notify_user_change() RETURNS TRIGGER AS $$
+ * // → DECLARE
+ * // →   payload JSONB;
+ * // →   user_profiles_data JSONB;
+ * // → BEGIN
+ * // →   -- Initialize the payload
+ * // →   payload = jsonb_build_object(
+ * // →     'table', TG_TABLE_NAME,
+ * // →     'action', TG_OP,
+ * // →     'new_values', jsonb_build_object(
+ * // →       'name', NEW.name,
+ * // →       'email', NEW.email,
+ * // →       'role', NEW.role
+ * // →     )
+ * // →   );
+ * // →   
+ * // →   -- Add old values for UPDATE operations
+ * // →   IF TG_OP = 'UPDATE' THEN
+ * // →     payload = payload || jsonb_build_object(
+ * // →       'old_values', jsonb_build_object(
+ * // →         'role', OLD.role
+ * // →       )
+ * // →     );
+ * // →   END IF;
+ * // →   
+ * // →   -- Join with user_profiles table
+ * // →   SELECT jsonb_build_object(
+ * // →     'avatar_url', avatar_url,
+ * // →     'bio', bio
+ * // →   ) INTO user_profiles_data
+ * // →   FROM user_profiles
+ * // →   WHERE user_id = NEW.id;
+ * // →   
+ * // →   -- Add joined data to payload
+ * // →   payload = payload || jsonb_build_object('user_profiles', user_profiles_data);
+ * // →   
+ * // →   -- Send notification
+ * // →   PERFORM pg_notify('user_changes', payload::text);
+ * // →   RETURN NEW;
+ * // → END;
+ * // → $$ LANGUAGE plpgsql;
+ * // → 
+ * // → CREATE OR REPLACE TRIGGER user_change_trigger
+ * // → AFTER UPDATE OR INSERT ON "users"
+ * // → FOR EACH ROW
+ * // → EXECUTE FUNCTION notify_user_change();
+ */
+export function createFunctionAndTrigger<
+    TrackColumn extends string = string,
+    TableName extends string = string,
+    JoinTableName extends string = string,
+    JoinColumn extends string = string,
+    SourceColumn extends string = string,
+    SelectColumns extends string = string
+>(
+    functionName: string,
+    config: FunctionConfig<TrackColumn, TableName, JoinTableName, JoinColumn, SourceColumn, SelectColumns>
+): string {
+    // Create the function definition
+    let sql = `CREATE OR REPLACE FUNCTION ${functionName}(`;
+    
+    // Add parameters if they exist
+    if (config.functionParams && config.functionParams.length > 0) {
+        sql += config.functionParams.map(param => {
+            let paramDef = `${param.name} ${param.type}`;
+            if (param.defaultValue !== undefined) {
+                paramDef += ` DEFAULT ${param.defaultValue}`;
+            }
+            return paramDef;
+        }).join(', ');
+    }
+    
+    sql += `) RETURNS ${config.returnType} AS $$\n`;
+    
+    // If custom body is provided, use it
+    if (config.customBody) {
+        sql += config.customBody;
+    } else {
+        // Generate function body based on configuration
+        let functionBody = '';
+        
+        // Declare section for variables if needed
+        const needsDeclare = (config.joinTables && config.joinTables.length > 0) || 
+                            (config.trackNewValues && config.trackNewValues.length > 0) || 
+                            (config.trackOldValues && config.trackOldValues.length > 0);
+        
+        if (needsDeclare) {
+            functionBody += "DECLARE\n  payload JSONB;\n";
+            
+            // Add variables for join results
+            if (config.joinTables && config.joinTables.length > 0) {
+                config.joinTables.forEach(join => {
+                    functionBody += `  ${join.table}_data JSONB;\n`;
+                });
+            }
+            
+            functionBody += "BEGIN\n";
+            
+            // Initialize the payload
+            functionBody += "  -- Initialize the payload\n";
+            functionBody += "  payload = jsonb_build_object(\n";
+            functionBody += "    'table', TG_TABLE_NAME,\n";
+            functionBody += "    'action', TG_OP";
+            
+            // Add new values tracking
+            if (config.trackNewValues && config.trackNewValues.length > 0) {
+                functionBody += ",\n    'new_values', jsonb_build_object(\n";
+                
+                // Add each tracked column
+                functionBody += config.trackNewValues.map(col => 
+                    `      '${col}', NEW.${col}`
+                ).join(',\n');
+                
+                functionBody += "\n    )";
+            }
+            
+            functionBody += "\n  );\n\n";
+            
+            // Add old values tracking for UPDATE operations
+            if (config.trackOldValues && config.trackOldValues.length > 0) {
+                functionBody += "  -- Add old values for UPDATE operations\n";
+                functionBody += "  IF TG_OP = 'UPDATE' THEN\n";
+                functionBody += "    payload = payload || jsonb_build_object(\n";
+                functionBody += "      'old_values', jsonb_build_object(\n";
+                
+                // Add each tracked old column
+                functionBody += config.trackOldValues.map(col => 
+                    `        '${col}', OLD.${col}`
+                ).join(',\n');
+                
+                functionBody += "\n      )\n";
+                functionBody += "    );\n";
+                functionBody += "  END IF;\n\n";
+            }
+            
+            // Process joins
+            if (config.joinTables && config.joinTables.length > 0) {
+                config.joinTables.forEach(join => {
+                    functionBody += `  -- Join with ${join.table} table\n`;
+                    functionBody += `  SELECT jsonb_build_object(\n`;
+                    
+                    // Add each selected column
+                    functionBody += join.selectColumns.map(col => 
+                        `    '${col}', ${col}`
+                    ).join(',\n');
+                    
+                    functionBody += `\n  ) INTO ${join.table}_data\n`;
+                    functionBody += `  FROM ${join.table}\n`;
+                    functionBody += `  WHERE ${join.joinColumn} = NEW.${join.sourceColumn}`;
+                    
+                    if (join.condition) {
+                        functionBody += ` AND ${join.condition}`;
+                    }
+                    
+                    functionBody += `;\n\n`;
+                    
+                    // Add joined data to payload
+                    functionBody += `  -- Add joined data to payload\n`;
+                    functionBody += `  payload = payload || jsonb_build_object('${join.table}', ${join.table}_data);\n\n`;
+                });
+            }
+            
+            // Add notification if channel is specified
+            if (config.channelName) {
+                functionBody += `  -- Send notification\n`;
+                functionBody += `  PERFORM pg_notify('${config.channelName}', payload::text);\n`;
+            }
+            
+            // Return NEW for trigger functions
+            if (config.returnType === 'TRIGGER') {
+                functionBody += "  RETURN NEW;\n";
+            }
+            
+            functionBody += "END;";
+        } else {
+            // Simple default body for trigger functions
+            if (config.returnType === 'TRIGGER') {
+                functionBody = "BEGIN\n";
+                
+                if (config.channelName) {
+                    functionBody += `  PERFORM pg_notify('${config.channelName}', row_to_json(NEW)::text);\n`;
+                }
+                
+                functionBody += "  RETURN NEW;\n";
+                functionBody += "END;";
+            } else {
+                // Empty function for non-trigger returns
+                functionBody = "BEGIN\n  RETURN;\nEND;";
+            }
+        }
+        
+        sql += functionBody;
+    }
+    
+    // Close function definition
+    sql += `\n$$ LANGUAGE ${config.language || 'plpgsql'};\n`;
+    
+    // Create the associated triggers
+    for (const trigger of config.triggers) {
+        sql += `\nCREATE OR REPLACE TRIGGER ${trigger.triggerName}\n`;
+        sql += `${trigger.timing} ${trigger.events.join(' OR ')} ON "${trigger.tableName}"\n`;
+        sql += `FOR EACH ${trigger.forEach}\n`;
+        
+        if (trigger.condition) {
+            sql += `WHEN (${trigger.condition})\n`;
+        }
+        
+        sql += `EXECUTE FUNCTION ${functionName}();\n`;
+    }
+    
+    return sql;
 }
 
 
