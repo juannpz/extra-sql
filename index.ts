@@ -148,30 +148,6 @@ export enum ColumnDefaultValue {
     ONE = "1"
 }
 
-export interface JoinTableConfig<
-    JoinColumn extends string = string,
-    SourceColumn extends string = string,
-    SelectColumns extends string = string
-> {
-    joinColumn: JoinColumn;
-    sourceColumn: SourceColumn;
-    selectColumns: Record<SelectColumns, boolean>;
-    condition?: string;
-}
-
-export interface TriggerDefinition<TableName extends string = string> {
-    tableName: TableName;
-    timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF';
-    events: Record<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE', boolean>;
-    forEach: 'ROW' | 'STATEMENT';
-    condition?: string;
-}
-
-export interface FunctionParameter {
-    type: string;
-    defaultValue?: string;
-}
-
 export interface FunctionConfig<
     TrackColumn extends string = string,
     TableName extends string = string,
@@ -182,13 +158,37 @@ export interface FunctionConfig<
 > {
     returnType: string;
     language?: string;
-    trackNewValues?: Record<TrackColumn, boolean>;
-    trackOldValues?: Record<TrackColumn, boolean>;
-    joinTables?: Record<JoinTableName, JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>>;
+    trackNewValues?: Partial<Record<TrackColumn, boolean>>;
+    trackOldValues?: Partial<Record<TrackColumn, boolean>>;
+    joinTables?: Partial<Record<JoinTableName, JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>>>;
     channelName?: string;
     customBody?: string;
     triggers: Record<string, TriggerDefinition<TableName>>;
-    functionParams?: Record<string, FunctionParameter>;
+    functionParams?: Partial<Record<string, FunctionParameter>>;
+}
+
+export interface FunctionParameter {
+    type: string;
+    defaultValue?: string;
+}
+
+export interface JoinTableConfig<
+    JoinColumn extends string = string,
+    SourceColumn extends string = string,
+    SelectColumns extends string = string
+> {
+    joinColumn: JoinColumn;
+    sourceColumn: SourceColumn;
+    selectColumns: Partial<Record<SelectColumns, boolean>>;
+    condition?: string;
+}
+
+export interface TriggerDefinition<TableName extends string = string> {
+    tableName: TableName;
+    timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF';
+    events: Partial<Record<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE', boolean>>;
+    forEach: 'ROW' | 'STATEMENT';
+    condition?: string;
 }
 
 //#region HELPERS
@@ -893,12 +893,15 @@ export function createFunctionAndTrigger<
     // Add parameters if they exist
     if (config.functionParams && Object.keys(config.functionParams).length > 0) {
         sql += Object.entries(config.functionParams).map(([paramName, paramConfig]) => {
+            // Verificar que paramConfig no sea undefined
+            if (!paramConfig) return '';
+            
             let paramDef = `${paramName} ${paramConfig.type}`;
             if (paramConfig.defaultValue !== undefined) {
                 paramDef += ` DEFAULT ${paramConfig.defaultValue}`;
             }
             return paramDef;
-        }).join(', ');
+        }).filter(Boolean).join(', ');
     }
     
     sql += `) RETURNS ${config.returnType} AS $$\n`;
@@ -968,9 +971,13 @@ export function createFunctionAndTrigger<
             }
             
             // Process joins
-            if (joinTableNames.length > 0) {
+            if (joinTableNames.length > 0 && config.joinTables) {
                 joinTableNames.forEach(tableName => {
-                    const join = config.joinTables![tableName as JoinTableName];
+                    const join = config.joinTables?.[tableName as JoinTableName];
+                    
+                    // Verificar que join no sea undefined
+                    if (!join) return;
+                    
                     const selectColumnNames = Object.keys(join.selectColumns)
                         .filter(key => join.selectColumns[key as SelectColumns]);
                     
