@@ -61,10 +61,11 @@ export interface CreateIndexOptions {
 
 /** Options for inserting into a table. */
 export interface InsertIntoOptions {
-  /** Column name for the primary key. */
-  pk?: string;
+    /** Column name for the primary key. */
+    pk?: string;
+    /** Add RETURNING clause to the query. */
+    returning?: boolean;
 }
-
 
 /** Options for setting up table indexes. */
 export interface SetupTableIndexOptions {
@@ -323,29 +324,24 @@ export function createView(name: string, query: string, _opt: object | null=null
  * Generates SQL command for INSERT INTO using an array of values.
  * @param table table name
  * @param rows row objects `{column: value}`
- * @param opt options `{pk}`
+ * @param opt options `{pk, returning}`
  * @param acc string to accumulate to (internal use)
  * @returns SQL command to insert into the table
  * @example
  * ```ts
- * xsql.insertInto("food", [{code: "F1", name: "Mango"}]);
- * // → INSERT INTO "food" ("code", "name") VALUES\n($$F1$$, $$Mango$$);
- *
- * xsql.insertInto("food", [{code: "F1", name: "Mango"}, {code: "F2", name: "Lychee"}], {pk: "code"});
- * // → INSERT INTO "food" ("code", "name") VALUES
- * // → ($$F1$$, $$Mango$$),
- * // → ($$F2$$, $$Lychee$$)
- * // → ON CONFLICT ("code") DO NOTHING;
+ * xsql.insertInto("food", [{code: "F1", name: "Mango"}], {returning: true});
+ * // → INSERT INTO "food" ("code", "name") VALUES\n($$F1$$, $$Mango$$) RETURNING *;
  * ```
  */
-export function insertInto(table: string, rows: Iterable<RowData>, opt: InsertIntoOptions={}, acc: string=''): string {
-  let i = -1;
-  acc += `INSERT INTO "${table}" (`;
-  for (const val of rows)
-    acc = addRow(val, acc, ++i);
-  acc = acc.replace(/\),\n\($/, '') + ')';
-  if (opt.pk) acc += `\nON CONFLICT ("${opt.pk}") DO NOTHING`;
-  return acc + ';\n';
+export function insertInto(table: string, rows: Iterable<RowData>, opt: InsertIntoOptions = {}, acc: string = ''): string {
+    let i = -1;
+    acc += `INSERT INTO "${table}" (`;
+    for (const val of rows)
+        acc = addRow(val, acc, ++i);
+    acc = acc.replace(/\),\n\($/, '') + ')';
+    if (opt.pk) acc += `\nON CONFLICT ("${opt.pk}") DO NOTHING`;
+    if (opt.returning) acc += ' RETURNING *';
+    return acc + ';\n';
 }
 
 
@@ -541,22 +537,36 @@ export function createTableData(table: string, cols: ColumnTypes, pkeys?: string
 
 
 /**
- * Generate SQL command for updating data.
+ * Generates SQL command for updating data.
  * @param table table name
  * @param set columns to set `{column: value}`
  * @param where where conditions `{column: value}`
  * @param op operator for conditions ['=']
  * @param sep separator for conditions ['AND']
+ * @param returning add RETURNING clause to the query [false]
  * @returns query data for updating the data `{query, data}`
+ * @example
+ * ```ts
+ * xsql.updateData("users", {name: "Alice"}, {id: 1}, "=", "AND", true);
+ * // → { query: 'UPDATE "users" SET "name" = $1 WHERE "id" = $2 RETURNING *;', data: ["Alice", 1] }
+ * ```
  */
-export function updateData(table: string, set: RowData, where: RowData, op: string='=', sep: string='AND'): QueryData {
-  const par: unknown[] = [];
-  const setStr = formatData(set   || {}, '"%k" = $%i', ', ', 1, par);
-  const exp    = formatData(where || {}, `"%k" ${op} $%i`, ` ${sep} `, par.length + 1, par);
-  return {
-    query: `UPDATE "${table}" SET ${setStr}${exp ? ' WHERE ' + exp : ''};`,
-    data: par
-  };
+export function updateData(
+    table: string,
+    set: RowData,
+    where: RowData,
+    op: string = '=',
+    sep: string = 'AND',
+    returning: boolean = false
+): QueryData {
+    const par: unknown[] = [];
+    const setStr = formatData(set || {}, '"%k" = $%i', ', ', 1, par);
+    const exp = formatData(where || {}, `"%k" ${op} $%i`, ` ${sep} `, par.length + 1, par);
+    const returningClause = returning ? ' RETURNING *' : '';
+    return {
+        query: `UPDATE "${table}" SET ${setStr}${exp ? ' WHERE ' + exp : ''}${returningClause};`,
+        data: par
+    };
 }
 
 
@@ -579,19 +589,26 @@ export function selectData(tab: string, whr: RowData, op: string='=', sep: strin
 
 
 /**
- * Generate SQL command for inserting data.
+ * Generates SQL command for inserting data.
  * @param table table name
  * @param rows rows to insert
+ * @param returning add RETURNING clause to the query [false]
  * @returns query data for inserting the data `{query, data}`
+ * @example
+ * ```ts
+ * xsql.insertIntoData("users", [{name: "Bob", age: 30}], true);
+ * // → { query: 'INSERT INTO "users" ("name", "age") VALUES ($1, $2) RETURNING *;', data: ["Bob", 30] }
+ * ```
  */
-export function insertIntoData(table: string, rows: RowData[]): QueryData {
-  const par: unknown[] = [];
-  const into    = formatData(rows[0] || {}, '"%k"', ', ', 1, par);
-  const rowsStr = formatData(par as unknown as RowData, '$%i', ', ', 1);
-  return {
-    query: `INSERT INTO "${table}" (${into}) VALUES (${rowsStr});`,
-    data: par
-  };
+export function insertIntoData(table: string, rows: RowData[], returning: boolean = false): QueryData {
+    const par: unknown[] = [];
+    const into = formatData(rows[0] || {}, '"%k"', ', ', 1, par);
+    const rowsStr = formatData(par as unknown as RowData, '$%i', ', ', 1);
+    const returningClause = returning ? ' RETURNING *' : '';
+    return {
+        query: `INSERT INTO "${table}" (${into}) VALUES (${rowsStr})${returningClause};`,
+        data: par
+    };
 }
 
 
