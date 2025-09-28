@@ -172,6 +172,7 @@ export interface FunctionConfig<
 > {
     returnType?: string;
     language?: string;
+	topLevelIdentifier?: TrackColumn;
     trackNewValues?: Partial<Record<TrackColumn, boolean>>;
     trackOldValues?: Partial<Record<TrackColumn, boolean>>;
     joinTables?: Partial<Record<JoinTableName, JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>>>;
@@ -971,6 +972,10 @@ export function createFunctionAndTrigger<
             functionBody += "  payload = jsonb_build_object(\n";
             functionBody += "    'table', TG_TABLE_NAME,\n";
             functionBody += "    'action', TG_OP";
+
+			if (config.topLevelIdentifier) {
+    			functionBody += `,\n    '${config.topLevelIdentifier}', NEW.${config.topLevelIdentifier}`;
+			}
 
             // Add new values tracking
             if (trackNewColumns.length > 0) {
