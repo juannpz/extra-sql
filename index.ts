@@ -159,7 +159,8 @@ export enum ColumnDefaultValue {
     ZERO = "0",
     EMPTY_STRING = "''",
     EMPTY_JSONB = "'{}'",
-    ONE = "1"
+    ONE = "1",
+	UUID = "gen_random_uuid()"
 }
 
 export interface FunctionConfig<
