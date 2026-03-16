@@ -2,48 +2,97 @@
 /** Set of operators in SQL. */
 export const OPERATORS: Set<string> = new Set([
   // Arithmetic operators
-  '+', '-', '*', '/', '%',
+  "+",
+  "-",
+  "*",
+  "/",
+  "%",
   // Bitwise operators
-  '&', '|', '^',
+  "&",
+  "|",
+  "^",
   // Comparison operators
-  '=', '>', '<', '>=', '<=', '<>',
+  "=",
+  ">",
+  "<",
+  ">=",
+  "<=",
+  "<>",
   // Compound operators
-  '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=',
+  "+=",
+  "-=",
+  "*=",
+  "/=",
+  "%=",
+  "&=",
+  "^=",
+  "|=",
   // Logical operators
-  'ALL', 'AND', 'ANY', 'BETWEEN', 'EXISTS', 'IN', 'LIKE', 'NOT', 'OR', 'SOME'
+  "ALL",
+  "AND",
+  "ANY",
+  "BETWEEN",
+  "EXISTS",
+  "IN",
+  "LIKE",
+  "NOT",
+  "OR",
+  "SOME",
 ]);
-
 
 /**
  * Number of operands used with an SQL operator.
  */
 export const OPERAND_COUNT: Map<string, number> = new Map([
   // Arithmetic operators
-  ['+', 2], ['-', 2], ['*', 2], ['/', 2], ['%', 2],
+  ["+", 2],
+  ["-", 2],
+  ["*", 2],
+  ["/", 2],
+  ["%", 2],
   // Bitwise operators
-  ['&', 2], ['|', 2], ['^', 2],
+  ["&", 2],
+  ["|", 2],
+  ["^", 2],
   // Comparison operators
-  ['=', 2], ['>', 2], ['<', 2], ['>=', 2], ['<=', 2], ['<>', 2],
+  ["=", 2],
+  [">", 2],
+  ["<", 2],
+  [">=", 2],
+  ["<=", 2],
+  ["<>", 2],
   // Compound operators
-  ['+=', 2], ['-=', 2], ['*=', 2], ['/=', 2], ['%=', 2], ['&=', 2], ['^=', 2], ['|=', 2],
+  ["+=", 2],
+  ["-=", 2],
+  ["*=", 2],
+  ["/=", 2],
+  ["%=", 2],
+  ["&=", 2],
+  ["^=", 2],
+  ["|=", 2],
   // Logical operators
-  ['ALL', 2], ['AND', 2], ['ANY', 2], ['BETWEEN', 3], ['EXISTS', 1], ['IN', 2], ['LIKE', 2], ['NOT', 1], ['OR', 2], ['SOME', 2]
+  ["ALL", 2],
+  ["AND", 2],
+  ["ANY", 2],
+  ["BETWEEN", 3],
+  ["EXISTS", 1],
+  ["IN", 2],
+  ["LIKE", 2],
+  ["NOT", 1],
+  ["OR", 2],
+  ["SOME", 2],
 ]);
 //#endregion
 
-
-
-
 //#region TYPES
 /** Types for columns in a table. */
-export type ColumnTypes = {[key: string]: string};
+export type ColumnTypes = { [key: string]: string };
 
 /** Weights for columns in a table (for a tsvector). */
-export type ColumnWeights = {[key: string]: string};
+export type ColumnWeights = { [key: string]: string };
 
 /** Data for a row in a table. */
 export type RowData = Record<string, unknown>;
-
 
 /** Options for creating a table. */
 export interface CreateTableOptions {
@@ -51,33 +100,30 @@ export interface CreateTableOptions {
   pk?: string;
 }
 
-
 /** Options for creating an index. */
 export interface CreateIndexOptions {
   /** Indexing method (e.g., GIN, BTREE). */
   method?: string;
 }
 
-
 /** Options for inserting into a table. */
 export interface InsertIntoOptions {
-    /** Column name for the primary key. */
-    pk?: string;
-    /** Add RETURNING clause to the query. */
-    returning?: boolean;
+  /** Column name for the primary key. */
+  pk?: string;
+  /** Add RETURNING clause to the query. */
+  returning?: boolean;
 }
 
 /** Options for inserting into a table. */
 export interface InsertIntoDataOptions {
-    /** Add RETURNING clause to the query. */
-    returning?: boolean;
+  /** Add RETURNING clause to the query. */
+  returning?: boolean;
 }
-
 
 /** Options for updating data in a table. */
 export interface UpdateDataOptions {
-    /** Add RETURNING clause to the query. */
-    returning?: boolean;
+  /** Add RETURNING clause to the query. */
+  returning?: boolean;
 }
 
 /** Options for setting up table indexes. */
@@ -90,7 +136,6 @@ export interface SetupTableIndexOptions {
   tsvector?: ColumnWeights;
 }
 
-
 /** Options for setting up a table. */
 export interface SetupTableOptions {
   /** Column name for the primary key. */
@@ -100,7 +145,6 @@ export interface SetupTableOptions {
   /** Columns, with their weights, for full-text search. */
   tsvector?: ColumnWeights;
 }
-
 
 /** Options for selecting with tsquery. */
 export interface SelectTsqueryOptions {
@@ -114,7 +158,6 @@ export interface SelectTsqueryOptions {
   normalization?: number;
 }
 
-
 /** Options for matching with tsquery. */
 export interface MatchTsqueryOptions {
   /** Columns to select. */
@@ -127,7 +170,6 @@ export interface MatchTsqueryOptions {
   normalization?: number;
 }
 
-
 /** Query data with SQL and parameters. */
 export interface QueryData {
   /** SQL query string. */
@@ -137,74 +179,115 @@ export interface QueryData {
 }
 //#endregion
 
-export interface ForeignKeyConstraint<TargetTable = string, TargetColumn = string> {
-    table: TargetTable;
-    column: TargetColumn;
-    onDelete?: 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
-    onUpdate?: 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
+export interface ForeignKeyConstraint<
+  TargetTable = string,
+  TargetColumn = string,
+> {
+  table: TargetTable;
+  column: TargetColumn;
+  onDelete?: "CASCADE" | "SET NULL" | "SET DEFAULT" | "RESTRICT" | "NO ACTION";
+  onUpdate?: "CASCADE" | "SET NULL" | "SET DEFAULT" | "RESTRICT" | "NO ACTION";
 }
 
 export interface ColumnConstraints {
-    notNull?: boolean;
-    default?: ColumnDefaultValue;
-    unique?: boolean;
+  notNull?: boolean;
+  default?: ColumnDefaultValue;
+  unique?: boolean;
 }
 
 export enum ColumnDefaultValue {
-    CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP",
-    NOW = "NOW()",
-    NULL = "NULL",
-    TRUE = "TRUE",
-    FALSE = "FALSE",
-    ZERO = "0",
-    EMPTY_STRING = "''",
-    EMPTY_JSONB = "'{}'",
-    ONE = "1",
-	UUID = "gen_random_uuid()"
+  CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP",
+  NOW = "NOW()",
+  NULL = "NULL",
+  TRUE = "TRUE",
+  FALSE = "FALSE",
+  ZERO = "0",
+  EMPTY_STRING = "''",
+  EMPTY_JSONB = "'{}'",
+  ONE = "1",
+  UUID = "gen_random_uuid()",
 }
 
 export interface FunctionConfig<
-    TrackColumn extends string = string,
-    TableName extends string = string,
-    JoinTableName extends string = string,
-    JoinColumn extends string = string,
-    SourceColumn extends string = string,
-    SelectColumns extends string = string
+  TrackColumn extends string = string,
+  TableName extends string = string,
+  JoinTableName extends string = string,
+  JoinColumn extends string = string,
+  SourceColumn extends string = string,
+  SelectColumns extends string = string,
 > {
-    returnType?: string;
-    language?: string;
-	topLevelIdentifier?: TrackColumn;
-    trackNewValues?: Partial<Record<TrackColumn, boolean>>;
-    trackOldValues?: Partial<Record<TrackColumn, boolean>>;
-    joinTables?: Partial<Record<JoinTableName, JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>>>;
-    channelName?: string;
-    customBody?: string;
-    triggers: Record<string, TriggerDefinition<TableName>>;
-    functionParams?: Partial<Record<string, FunctionParameter>>;
+  returnType?: string;
+  language?: string;
+  topLevelIdentifier?: TrackColumn;
+  trackNewValues?: Partial<Record<TrackColumn, boolean>>;
+  trackOldValues?: Partial<Record<TrackColumn, boolean>>;
+  joinTables?: Partial<
+    Record<
+      JoinTableName,
+      JoinTableConfig<JoinColumn, SourceColumn, SelectColumns>
+    >
+  >;
+  channelName?: string;
+  customBody?: string;
+  triggers: Record<string, TriggerDefinition<TableName>>;
+  functionParams?: Partial<Record<string, FunctionParameter>>;
 }
 
 export interface FunctionParameter {
-    type: string;
-    defaultValue?: string;
+  type: string;
+  defaultValue?: string;
 }
 
 export interface JoinTableConfig<
-    JoinColumn extends string = string,
-    SourceColumn extends string = string,
-    SelectColumns extends string = string
+  JoinColumn extends string = string,
+  SourceColumn extends string = string,
+  SelectColumns extends string = string,
 > {
-    joinColumn: JoinColumn;
-    sourceColumn: SourceColumn;
-    selectColumns: Partial<Record<SelectColumns, boolean>>;
-    condition?: string;
+  joinColumn: JoinColumn;
+  sourceColumn: SourceColumn;
+  selectColumns: Partial<Record<SelectColumns, boolean>>;
+  condition?: string;
 }
 
 export interface TriggerDefinition<TableName extends string = string> {
-    tableName: TableName;
-    timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF';
-    events: Partial<Record<'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE', boolean>>;
-    forEach: 'ROW' | 'STATEMENT';
-    condition?: string;
+  tableName: TableName;
+  timing: "BEFORE" | "AFTER" | "INSTEAD OF";
+  events: Partial<Record<"INSERT" | "UPDATE" | "DELETE" | "TRUNCATE", boolean>>;
+  forEach: "ROW" | "STATEMENT";
+  condition?: string;
+}
+
+/** Specialized condition for WHERE clauses to support mixed operators. */
+export interface QueryCondition {
+  op: string;
+  val: unknown;
+}
+
+export interface ViewJoin {
+    type: "INNER" | "LEFT" | "RIGHT" | "FULL";
+    table: string;
+    alias: string;
+    condition: string;
+}
+
+export interface CreateViewConfig<ViewColumn extends string = string> {
+    name: string;
+    /** Las columnas formales que tendrá la vista (para el tipado estricto) */
+    columns: ViewColumn[];
+    /** Qué tabla es la principal */
+    from: { table: string; alias: string };
+    /** Las columnas o expresiones a seleccionar */
+    select: string[];
+    /** Joins opcionales */
+    joins?: ViewJoin[];
+    /** Agrupaciones opcionales */
+    groupBy?: string;
+}
+
+/** Type guard to check if an object is a QueryCondition. */
+export function isQueryCondition(obj: unknown): obj is QueryCondition {
+  return obj !== null && typeof obj === "object" && "op" in obj &&
+    "val" in obj && Object.keys(obj).length === 2;
 }
 
 //#region HELPERS
@@ -215,10 +298,12 @@ export interface TriggerDefinition<TableName extends string = string> {
  */
 function asArray<T>(x: unknown): T[] {
   if (Array.isArray(x)) return x;
-  if (x==null || typeof x === 'string' || typeof (x as Iterable<T>)[Symbol.iterator] !== 'function') return [x as T];
+  if (
+    x == null || typeof x === "string" ||
+    typeof (x as Iterable<T>)[Symbol.iterator] !== "function"
+  ) return [x as T];
   return Array.from(x as Iterable<T>);
 }
-
 
 /**
  * Format an object into a string based on a format pattern.
@@ -229,18 +314,28 @@ function asArray<T>(x: unknown): T[] {
  * @param val array to collect values (optional)
  * @returns formatted string
  */
-function formatData(obj: RowData, fmt: string, sep: string, i: number=0, val?: unknown[]): string {
+function formatData(
+  obj: RowData,
+  fmt: string,
+  sep: string,
+  i: number = 0,
+  val?: unknown[],
+): string {
   const a: string[] = [];
   const ve = Array.isArray(val);
-  i = i || (ve? val.length : 0);
+  i = i || (ve ? val.length : 0);
   for (const k in obj) {
     const v = obj[k];
-    a.push(fmt.replace(/%k/g, k).replace(/%v/g, String(v)).replace(/%i/g, String(i++)));
+    a.push(
+      fmt.replace(/%k/g, k).replace(/%v/g, String(v)).replace(
+        /%i/g,
+        String(i++),
+      ),
+    );
     if (ve) val.push(v);
   }
   return a.join(sep);
 }
-
 
 /**
  * Helper function to add a row to an INSERT INTO SQL command.
@@ -249,23 +344,22 @@ function formatData(obj: RowData, fmt: string, sep: string, i: number=0, val?: u
  * @param i current index [0]
  * @returns updated SQL string with the new row added
  */
-function addRow(row: RowData, acc: string='', i: number=0): string {
-  if (i===0) {
-    for (const k in row)
+function addRow(row: RowData, acc: string = "", i: number = 0): string {
+  if (i === 0) {
+    for (const k in row) {
       acc += `"${k}", `;
-    acc  = acc.endsWith(', ')? acc.substring(0, acc.length - 2) : acc;
-    acc += ') VALUES\n(';
+    }
+    acc = acc.endsWith(", ") ? acc.substring(0, acc.length - 2) : acc;
+    acc += ") VALUES\n(";
   }
-  for (const k in row)
-    acc += row[k] == null? 'NULL, ' : `$$${row[k]}$$, `;
-  acc  = acc.endsWith(', ')? acc.substring(0, acc.length - 2) : acc;
-  acc += '),\n(';
+  for (const k in row) {
+    acc += row[k] == null ? "NULL, " : `$$${row[k]}$$, `;
+  }
+  acc = acc.endsWith(", ") ? acc.substring(0, acc.length - 2) : acc;
+  acc += "),\n(";
   return acc;
 }
 //#endregion
-
-
-
 
 /**
  * Generate SQL command for CREATE TABLE.
@@ -283,14 +377,19 @@ function addRow(row: RowData, acc: string='', i: number=0): string {
  * // → CREATE TABLE IF NOT EXISTS "animal" ("name" TEXT, "type" TEXT, "age" INT, PRIMARY KEY("name"));
  * ```
  */
-export function createTable(name: string, cols: ColumnTypes, opt: CreateTableOptions={}, acc: string=''): string {
+export function createTable(
+  name: string,
+  cols: ColumnTypes,
+  opt: CreateTableOptions = {},
+  acc: string = "",
+): string {
   acc += `CREATE TABLE IF NOT EXISTS "${name}" (`;
-  for (const k in cols)
+  for (const k in cols) {
     acc += `"${k}" ${cols[k]}, `;
+  }
   if (opt.pk) acc += `PRIMARY KEY("${opt.pk}"), `;
-  return acc.replace(/, $/, '') + `);\n`;
+  return acc.replace(/, $/, "") + `);\n`;
 }
-
 
 /**
  * Generate SQL command for CREATE INDEX.
@@ -309,12 +408,17 @@ export function createTable(name: string, cols: ColumnTypes, opt: CreateTableOpt
  * // → CREATE INDEX IF NOT EXISTS "food_type_idx" ON "food" USING GIN ("type");
  * ```
  */
-export function createIndex(name: string, table: string, expr: string, opt: CreateIndexOptions={}, acc: string=''): string {
+export function createIndex(
+  name: string,
+  table: string,
+  expr: string,
+  opt: CreateIndexOptions = {},
+  acc: string = "",
+): string {
   acc += `CREATE INDEX IF NOT EXISTS "${name}" ON "${table}" `;
   if (opt.method) acc += `USING ${opt.method} `;
   return acc + `(${expr});\n`;
 }
-
 
 /**
  * Generate SQL command for CREATE VIEW.
@@ -329,11 +433,15 @@ export function createIndex(name: string, table: string, expr: string, opt: Crea
  * // → CREATE OR REPLACE VIEW "food_code" AS SELECT "code" FROM "food";
  * ```
  */
-export function createView(name: string, query: string, _opt: object | null=null, acc: string=''): string {
+export function createView(
+  name: string,
+  query: string,
+  _opt: object | null = null,
+  acc: string = "",
+): string {
   acc += `CREATE OR REPLACE VIEW "${name}" AS ${query};\n`;
   return acc;
 }
-
 
 /**
  * Generates SQL command for INSERT INTO using an array of values.
@@ -348,17 +456,22 @@ export function createView(name: string, query: string, _opt: object | null=null
  * // → INSERT INTO "food" ("code", "name") VALUES\n($$F1$$, $$Mango$$) RETURNING *;
  * ```
  */
-export function insertInto(table: string, rows: Iterable<RowData>, opt: InsertIntoOptions = {}, acc: string = ''): string {
-    let i = -1;
-    acc += `INSERT INTO "${table}" (`;
-    for (const val of rows)
-        acc = addRow(val, acc, ++i);
-    acc = acc.replace(/\),\n\($/, '') + ')';
-    if (opt.pk) acc += `\nON CONFLICT ("${opt.pk}") DO NOTHING`;
-    if (opt.returning) acc += ' RETURNING *';
-    return acc + ';\n';
+export function insertInto(
+  table: string,
+  rows: Iterable<RowData>,
+  opt: InsertIntoOptions = {},
+  acc: string = "",
+): string {
+  let i = -1;
+  acc += `INSERT INTO "${table}" (`;
+  for (const val of rows) {
+    acc = addRow(val, acc, ++i);
+  }
+  acc = acc.replace(/\),\n\($/, "") + ")";
+  if (opt.pk) acc += `\nON CONFLICT ("${opt.pk}") DO NOTHING`;
+  if (opt.returning) acc += " RETURNING *";
+  return acc + ";\n";
 }
-
 
 /**
  * Generate a tsvector expression for full-text search.
@@ -366,13 +479,14 @@ export function insertInto(table: string, rows: Iterable<RowData>, opt: InsertIn
  * @returns tsvector expression
  */
 function tsvector(cols: ColumnWeights): string {
-  let acc = '';
+  let acc = "";
   for (const k in cols) {
-    if (cols[k]) acc += `setweight(to_tsvector('english', "${k}"), '${cols[k]}')||`;
+    if (cols[k]) {
+      acc += `setweight(to_tsvector('english', "${k}"), '${cols[k]}')||`;
+    }
   }
-  return acc.replace(/\|\|$/, '');
+  return acc.replace(/\|\|$/, "");
 }
-
 
 /**
  * Generate SQL commands for setting up table indexes and views.
@@ -382,22 +496,33 @@ function tsvector(cols: ColumnWeights): string {
  * @param acc Accumulator for the SQL string (internal use).
  * @returns SQL commands for setting up the table indexes and views
  */
-export function setupTableIndex(table: string, cols: ColumnTypes, opt: SetupTableIndexOptions={}, acc: string=''): string {
+export function setupTableIndex(
+  table: string,
+  cols: ColumnTypes,
+  opt: SetupTableIndexOptions = {},
+  acc: string = "",
+): string {
   if (opt.tsvector) {
     const tv = tsvector(opt.tsvector);
-    acc += createView(table + '_tsvector', `SELECT *, ${tv} AS "tsvector" FROM "${table}"`);
-    if (opt.index) acc += createIndex(table + '_tsvector_idx', table, `(${tv})`, { method: 'GIN' });
+    acc += createView(
+      table + "_tsvector",
+      `SELECT *, ${tv} AS "tsvector" FROM "${table}"`,
+    );
+    if (opt.index) {
+      acc += createIndex(table + "_tsvector_idx", table, `(${tv})`, {
+        method: "GIN",
+      });
+    }
   }
   if (opt.index) {
     for (const k in cols) {
       if (cols[k] == null || k === opt.pk) continue;
-      const knam = k.replace(/\W+/g, '_').toLowerCase();
+      const knam = k.replace(/\W+/g, "_").toLowerCase();
       acc += createIndex(`${table}_${knam}_idx`, table, `"${k}"`);
     }
   }
   return acc;
 }
-
 
 /**
  * Generate SQL commands to set up a table (create, insert, index).
@@ -442,12 +567,17 @@ export function setupTableIndex(table: string, cols: ColumnTypes, opt: SetupTabl
  * // → CREATE INDEX IF NOT EXISTS "food_name_idx" ON "food" ("name");
  * ```
  */
-export function setupTable(name: string, cols: ColumnTypes, rows: Iterable<RowData> | null=null, opt: SetupTableOptions={}, acc: string=''): string {
+export function setupTable(
+  name: string,
+  cols: ColumnTypes,
+  rows: Iterable<RowData> | null = null,
+  opt: SetupTableOptions = {},
+  acc: string = "",
+): string {
   acc = createTable(name, cols, opt, acc);
   if (rows) acc = insertInto(name, rows, opt, acc);
   return setupTableIndex(name, cols, opt, acc);
 }
-
 
 /**
  * Generate SQL command to check if a table exists.
@@ -462,7 +592,6 @@ export function setupTable(name: string, cols: ColumnTypes, rows: Iterable<RowDa
 export function tableExists(name: string): string {
   return `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='${name}');\n`;
 }
-
 
 /**
  * Generate SQL command for SELECT with tsquery.
@@ -483,16 +612,24 @@ export function tableExists(name: string): string {
  * // → SELECT * FROM "columns" WHERE "tsvector" @@ plainto_tsquery('total fat') ORDER BY ts_rank("tsvector", plainto_tsquery('total fat'), 2) DESC LIMIT 1;
  * ```
  */
-export function selectTsquery(table: string, query: string, tsv: string='"tsvector"', opt: SelectTsqueryOptions={}): string {
-  const col = opt.columns || '*';
+export function selectTsquery(
+  table: string,
+  query: string,
+  tsv: string = '"tsvector"',
+  opt: SelectTsqueryOptions = {},
+): string {
+  const col = opt.columns || "*";
   const nrm = opt.normalization || 0;
-  let acc = `SELECT ${col} FROM "${table}" WHERE ${tsv} @@ plainto_tsquery('${query}')`;
-  if (opt.order) acc += ` ORDER BY ts_rank(${tsv}, plainto_tsquery('${query}'), ${nrm}) DESC`;
+  let acc =
+    `SELECT ${col} FROM "${table}" WHERE ${tsv} @@ plainto_tsquery('${query}')`;
+  if (opt.order) {
+    acc +=
+      ` ORDER BY ts_rank(${tsv}, plainto_tsquery('${query}'), ${nrm}) DESC`;
+  }
   if (opt.limit) acc += ` LIMIT ${opt.limit}`;
   acc += `;\n`;
   return acc;
 }
-
 
 /**
  * Generate SQL query for matching words with tsquery.
@@ -516,23 +653,30 @@ export function selectTsquery(table: string, query: string, tsv: string='"tsvect
  * // → SELECT *, '1'::INT AS "matchTsquery" FROM "columns" WHERE "tsvector" @@ plainto_tsquery('total') ORDER BY ts_rank("tsvector", plainto_tsquery('total'), 2) DESC LIMIT 1;
  * ```
  */
-export function matchTsquery(table: string, words: string[], tsv: string='"tsvector"', opt: MatchTsqueryOptions={}): string {
-  const col = opt.columns || '*';
+export function matchTsquery(
+  table: string,
+  words: string[],
+  tsv: string = '"tsvector"',
+  opt: MatchTsqueryOptions = {},
+): string {
+  const col = opt.columns || "*";
   const nrm = opt.normalization || 0;
-  let acc = '';
-  for (let i=words.length; i>0; i--) {
-    const qry = words.slice(0, i).join(' ').replace(/([\'\"])/g, '$1$1');
+  let acc = "";
+  for (let i = words.length; i > 0; i--) {
+    const qry = words.slice(0, i).join(" ").replace(/([\'\"])/g, "$1$1");
     acc += `SELECT ${col}, '${i}'::INT AS "matchTsquery" FROM "${table}"`;
     acc += ` WHERE ${tsv} @@ plainto_tsquery('${qry}')`;
-    if (opt.order) acc += ` ORDER BY ts_rank(${tsv}, plainto_tsquery('${qry}'), ${nrm}) DESC`;
-    acc += ' UNION ALL\n';
+    if (opt.order) {
+      acc +=
+        ` ORDER BY ts_rank(${tsv}, plainto_tsquery('${qry}'), ${nrm}) DESC`;
+    }
+    acc += " UNION ALL\n";
   }
   acc = acc.substring(0, acc.length - 11);
   if (opt.limit) acc += ` LIMIT ${opt.limit}`;
-  acc += ';\n';
+  acc += ";\n";
   return acc;
 }
-
 
 /**
  * Generate SQL command for creating a table with data.
@@ -541,15 +685,23 @@ export function matchTsquery(table: string, words: string[], tsv: string='"tsvec
  * @param pkeys primary key(s)
  * @returns query data for creating the table `{query, data}`
  */
-export function createTableData(table: string, cols: ColumnTypes, pkeys?: string | Iterable<string>): QueryData {
+export function createTableData(
+  table: string,
+  cols: ColumnTypes,
+  pkeys?: string | Iterable<string>,
+): QueryData {
   return {
     query: `CREATE TABLE IF NOT EXISTS "${table}" (` +
-      `${formatData(cols, '"%k" %v', ', ')}` +
-      (pkeys? `, PRIMARY KEY(${formatData(asArray(pkeys) as unknown as RowData, '"%v"', ', ')})` : ``) + `);`,
-    data: []
+      `${formatData(cols, '"%k" %v', ", ")}` +
+      (pkeys
+        ? `, PRIMARY KEY(${
+          formatData(asArray(pkeys) as unknown as RowData, '"%v"', ", ")
+        })`
+        : ``) +
+      `);`,
+    data: [],
   };
 }
-
 
 /**
  * Generates SQL command for updating data.
@@ -567,23 +719,24 @@ export function createTableData(table: string, cols: ColumnTypes, pkeys?: string
  * ```
  */
 export function updateData(
-    table: string,
-    set: RowData,
-    where: RowData,
-    op: string = '=',
-    sep: string = 'AND',
-    opt: UpdateDataOptions = {}
+  table: string,
+  set: RowData,
+  where: RowData,
+  op: string = "=",
+  sep: string = "AND",
+  opt: UpdateDataOptions = {},
 ): QueryData {
-    const par: unknown[] = [];
-    const setStr = formatData(set || {}, '"%k" = $%i', ', ', 1, par);
-    const exp = formatData(where || {}, `"%k" ${op} $%i`, ` ${sep} `, par.length + 1, par);
-    const returningClause = opt.returning ? ' RETURNING *' : '';
-    return {
-        query: `UPDATE "${table}" SET ${setStr}${exp ? ' WHERE ' + exp : ''}${returningClause};`,
-        data: par
-    };
+  const par: unknown[] = [];
+  const setStr = formatData(set || {}, '"%k" = $%i', ", ", 1, par);
+  const exp = buildWhereClause(where, op, sep, par.length + 1, par);
+  const returningClause = opt.returning ? " RETURNING *" : "";
+  return {
+    query: `UPDATE "${table}" SET ${setStr}${
+      exp ? " WHERE " + exp : ""
+    }${returningClause};`,
+    data: par,
+  };
 }
-
 
 /**
  * Generate SQL command for selecting data.
@@ -593,39 +746,63 @@ export function updateData(
  * @param sep separator for conditions ['AND']
  * @returns query data for selecting the data `{query, data}`
  */
-export function selectData(tab: string, whr: RowData, op: string='=', sep: string='AND'): QueryData {
+export function selectData(
+  tab: string,
+  whr: RowData,
+  op: string = "=",
+  sep: string = "AND",
+): QueryData {
   const par: unknown[] = [];
-  const exp = formatData(whr || {}, `"%k" ${op} $%i`, ` ${sep} `, 1, par);
+  const exp = buildWhereClause(whr, op, sep, 1, par);
   return {
-    query: `SELECT * FROM "${tab}"${exp ? ' WHERE ' + exp : ''};`,
-    data: par
+    query: `SELECT * FROM "${tab}"${exp ? " WHERE " + exp : ""};`,
+    data: par,
   };
 }
 
-
 /**
  * Generates SQL command for inserting data.
+ * Supports multiple rows for bulk parameterized inserts.
  * @param table table name
  * @param rows rows to insert
- * @param returning add RETURNING clause to the query [false]
+ * @param opt add RETURNING clause to the query [false]
  * @returns query data for inserting the data `{query, data}`
- * @example
- * ```ts
- * xsql.insertIntoData("users", [{name: "Bob", age: 30}], true);
- * // → { query: 'INSERT INTO "users" ("name", "age") VALUES ($1, $2) RETURNING *;', data: ["Bob", 30] }
- * ```
  */
-export function insertIntoData(table: string, rows: RowData[], opt: InsertIntoDataOptions = {}): QueryData {
-    const par: unknown[] = [];
-    const into = formatData(rows[0] || {}, '"%k"', ', ', 1, par);
-    const rowsStr = formatData(par as unknown as RowData, '$%i', ', ', 1);
-    const returningClause = opt.returning ? ' RETURNING *' : '';
-    return {
-        query: `INSERT INTO "${table}" (${into}) VALUES (${rowsStr})${returningClause};`,
-        data: par
-    };
-}
+export function insertIntoData(
+  table: string,
+  rows: RowData[],
+  opt: InsertIntoDataOptions = {},
+): QueryData {
+  if (!rows || rows.length === 0) {
+    return { query: "", data: [] };
+  }
 
+  const par: unknown[] = [];
+  // 1. Extraemos las columnas del primer objeto (asumimos que todos tienen la misma estructura)
+  const keys = Object.keys(rows[0]);
+  const into = keys.map(k => `"${k}"`).join(", ");
+
+  const valuesClauses: string[] = [];
+  let paramIndex = 1;
+
+  // 2. Iteramos sobre TODOS los objetos del array
+  for (const row of rows) {
+    const rowPlaceholders: string[] = [];
+    for (const key of keys) {
+      par.push(row[key]); // Guardamos el valor real
+      rowPlaceholders.push(`$${paramIndex++}`); // Armamos el $1, $2, etc.
+    }
+    // Agrupamos los placeholders de esta fila: ($1, $2, $3)
+    valuesClauses.push(`(${rowPlaceholders.join(", ")})`);
+  }
+
+  const returningClause = opt.returning ? " RETURNING *" : "";
+  
+  return {
+    query: `INSERT INTO "${table}" (${into}) VALUES ${valuesClauses.join(", ")}${returningClause};`,
+    data: par,
+  };
+}
 
 /**
  * Generate SQL command for deleting data.
@@ -635,148 +812,200 @@ export function insertIntoData(table: string, rows: RowData[], opt: InsertIntoDa
  * @param sep separator for conditions ['AND']
  * @returns query data for deleting the data `{query, data}`
  */
-export function deleteData(table: string, where: RowData, op: string='=', sep: string='AND'): QueryData {
+export function deleteData(
+  table: string,
+  where: RowData,
+  op: string = "=",
+  sep: string = "AND",
+): QueryData {
   const par: unknown[] = [];
-  const exp = formatData(where || {}, `"%k" ${op} $%i`, ` ${sep} `, 1, par);
+  const exp = buildWhereClause(where, op, sep, 1, par);
   return {
-    query: `DELETE FROM "${table}"${exp ? ' WHERE ' + exp : ''};`,
-    data: par
+    query: `DELETE FROM "${table}"${exp ? " WHERE " + exp : ""};`,
+    data: par,
   };
+}
+
+/**
+ * Construye una sentencia CREATE VIEW a partir de un objeto de configuración.
+ */
+export function buildView<ViewColumn extends string = string>(
+    config: CreateViewConfig<ViewColumn>
+): string {
+    const formattedCols = config.columns.map(c => `"${c}"`).join(", ");
+    
+    let query = `CREATE OR REPLACE VIEW "${config.name}" (${formattedCols}) AS\n`;
+    query += `SELECT\n  ${config.select.join(",\n  ")}\n`;
+    query += `FROM "${config.from.table}" ${config.from.alias}\n`;
+
+    if (config.joins) {
+        config.joins.forEach(j => {
+            query += `${j.type} JOIN "${j.table}" ${j.alias} ON ${j.condition}\n`;
+        });
+    }
+
+    if (config.groupBy) {
+        query += `GROUP BY ${config.groupBy}\n`;
+    }
+
+    return query + ";\n";
 }
 
 /**
  * Converts nested objects within an iterable collection to JSON strings.
  * This function takes any iterable collection of objects and transforms any
  * nested object (that is not an Array or Date) into its JSON string representation.
- * 
+ *
  * @param data - An iterable collection of objects that may contain nested objects
  * @returns An array of objects with nested objects converted to JSON strings
- * 
+ *
  * @example
  * // Converts the nested 'metadata' object to a JSON string
  * stringifyObjectsInIterable([
  *   { id: 1, metadata: { name: "test" } }
- * ]); 
+ * ]);
  * // Returns [{ id: 1, metadata: '{"name":"test"}' }]
  */
-export function stringifyObjectsInIterable(data: Iterable<Record<string, unknown>>): Record<string, unknown>[] {
-    const items = Array.isArray(data) ? data : Array.from(data);
+export function stringifyObjectsInIterable(
+  data: Iterable<Record<string, unknown>>,
+): Record<string, unknown>[] {
+  const items = Array.isArray(data) ? data : Array.from(data);
 
-    return items.map(item => {
-        const stringifiedItem: Record<string, unknown> = {};
+  return items.map((item) => {
+    const stringifiedItem: Record<string, unknown> = {};
 
-        for (const [key, value] of Object.entries(item)) {
-            const isObject = value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
+    for (const [key, value] of Object.entries(item)) {
+      const isObject = value !== null && typeof value === "object" &&
+        !Array.isArray(value) && !(value instanceof Date);
 
-            if (isObject)
-                stringifiedItem[key] = JSON.stringify(value);
-            else
-                stringifiedItem[key] = value;
-        }
+      if (isObject) {
+        stringifiedItem[key] = JSON.stringify(value);
+      } else {
+        stringifiedItem[key] = value;
+      }
+    }
 
-        return stringifiedItem;
-    });
+    return stringifiedItem;
+  });
 }
 
 /**
  * Removes null or undefined properties from an iterable collection of objects.
  * This function processes each object in the collection and removes any property
  * whose value is null or undefined, generating new clean objects.
- * 
+ *
  * @param data - An iterable collection of objects that may contain null or undefined properties
  * @returns An array of objects without null or undefined properties
- * 
+ *
  * @example
  * // Removes the 'optional' property which is undefined
  * removeNullAndUndefinedFromIterable([
  *   { id: 1, name: "test", optional: undefined }
- * ]); 
+ * ]);
  * // Returns [{ id: 1, name: "test" }]
  */
-export function removeNullAndUndefinedFromIterable(data: Iterable<Record<string, unknown>>): Record<string, unknown>[] {
-    const items = Array.isArray(data) ? data : Array.from(data);
+export function removeNullAndUndefinedFromIterable(
+  data: Iterable<Record<string, unknown>>,
+): Record<string, unknown>[] {
+  const items = Array.isArray(data) ? data : Array.from(data);
 
-    return items.map(item => {
-        const cleanItem: Record<string, unknown> = {};
+  return items.map((item) => {
+    const cleanItem: Record<string, unknown> = {};
 
-        for (const [key, value] of Object.entries(item)) {
-            if (value !== null && value !== undefined)
-                cleanItem[key] = value;
-        }
+    for (const [key, value] of Object.entries(item)) {
+      if (value !== null && value !== undefined) {
+        cleanItem[key] = value;
+      }
+    }
 
-        return cleanItem;
-    });
+    return cleanItem;
+  });
 }
 
 /**
  * Converts nested objects within an object to JSON strings.
  * This function examines each property of the object and transforms any
  * nested object (that is not an Array or Date) into its JSON string representation.
- * 
+ *
  * @param data - An object that may contain nested objects
  * @returns An object with nested objects converted to JSON strings
- * 
+ *
  * @example
  * // Converts the nested 'config' object to a JSON string
  * stringifyObjectsInObject({
  *   id: 1,
  *   config: { theme: "dark", notifications: true }
- * }); 
+ * });
  * // Returns { id: 1, config: '{"theme":"dark","notifications":true}' }
  */
-export function stringifyObjectsInObject(data: Record<string, unknown>): Record<string, unknown> {
-    const stringifiedObject: Record<string, unknown> = {};
+export function stringifyObjectsInObject(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const stringifiedObject: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(data)) {
-        const isObject = value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
+  for (const [key, value] of Object.entries(data)) {
+    const isObject = value !== null && typeof value === "object" &&
+      !Array.isArray(value) && !(value instanceof Date);
 
-        if (isObject)
-            stringifiedObject[key] = JSON.stringify(value);
-        else
-            stringifiedObject[key] = value;
+    if (isObject) {
+      stringifiedObject[key] = JSON.stringify(value);
+    } else {
+      stringifiedObject[key] = value;
     }
+  }
 
-    return stringifiedObject;
+  return stringifiedObject;
 }
 
 /**
  * Removes null or undefined properties from an object.
  * This function processes the object and removes any property
  * whose value is null or undefined, generating a new clean object.
- * 
+ *
  * @param data - An object that may contain null or undefined properties
  * @returns An object without null or undefined properties
- * 
+ *
  * @example
  * // Removes the 'description' property which is null
  * removeNullAndUndefinedFromObject({
  *   id: 1,
  *   name: "test",
  *   description: null
- * }); 
+ * });
  * // Returns { id: 1, name: "test" }
  */
-export function removeNullAndUndefinedFromObject(data: Record<string, unknown>): Record<string, unknown> {
-    const cleanObject: Record<string, unknown> = {};
+export function removeNullAndUndefinedFromObject(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const cleanObject: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(data)) {
-        if (value !== null && value !== undefined)
-            cleanObject[key] = value;
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== null && value !== undefined) {
+      if (isQueryCondition(value)) {
+        // Solo conservamos el QueryCondition si su valor interno (val) es válido
+        if (value.val !== null && value.val !== undefined) {
+          cleanObject[key] = value;
+        }
+      } else {
+        cleanObject[key] = value;
+      }
     }
+  }
 
-    return cleanObject;
+  return cleanObject;
 }
 
 /**
- * Applies column constraints and foreign key relationships to a SQL CREATE TABLE query.
+ * Applies column constraints, foreign key relationships, and table-level constraints to a SQL CREATE TABLE query.
  * This function enhances a basic CREATE TABLE query by adding NOT NULL, DEFAULT, UNIQUE constraints,
- * and foreign key relationships. It supports TypeScript generics for type-safe constraint definition.
- * 
- * @param query - The original CREATE TABLE SQL query string
+ * foreign key relationships, and composite constraints (like composite UNIQUE or CHECK).
+ * It supports TypeScript generics for type-safe constraint definition.
+ * * @param query - The original CREATE TABLE SQL query string
  * @param constraints - A partial record mapping column names to their constraints (NOT NULL, DEFAULT, UNIQUE)
  * @param foreignKeys - Optional partial record mapping column names to their foreign key relationships
+ * @param tableConstraints - Optional array of raw SQL strings for table-level constraints (e.g. composite keys)
  * @returns A modified SQL query string with all constraints applied
- * 
+ *
  * @example
  * // Adds NOT NULL, DEFAULT constraints and a foreign key relationship
  * applyColumnConstraints(
@@ -796,70 +1025,102 @@ export function removeNullAndUndefinedFromObject(data: Record<string, unknown>):
  * // Returns a SQL query with NOT NULL, UNIQUE constraints and foreign key definition
  */
 export function applyColumnConstraints<
-    SourceColumn extends string = string,
-    TargetTable extends string = string,
-    TargetColumn extends string = string
+  SourceColumn extends string = string,
+  TargetTable extends string = string,
+  TargetColumn extends string = string,
 >(
-    query: string,
-    constraints: Partial<Record<SourceColumn, ColumnConstraints>>,
-    foreignKeys?: Partial<Record<SourceColumn, ForeignKeyConstraint<TargetTable, TargetColumn>>>
+  query: string,
+  constraints: Partial<Record<SourceColumn, ColumnConstraints>>,
+  foreignKeys?: Partial<
+    Record<SourceColumn, ForeignKeyConstraint<TargetTable, TargetColumn>>
+  >,
+  tableConstraints?: string[],
 ): string {
-    let modifiedQuery = query;
+  let modifiedQuery = query;
 
-    for (const [columnName, columnConstraints] of Object.entries(constraints) as [SourceColumn, ColumnConstraints][]) {
-        const pattern = new RegExp(`"${columnName}"\\s+([^,)]+?)(?=,|\\)|$)`);
+  // 1. Procesar Constraints de Columnas (NOT NULL, DEFAULT, UNIQUE)
+  for (
+    const [columnName, columnConstraints] of Object.entries(constraints) as [
+      SourceColumn,
+      ColumnConstraints,
+    ][]
+  ) {
+    const pattern = new RegExp(`"${columnName}"\\s+([^,)]+?)(?=,|\\)|$)`);
 
-        modifiedQuery = modifiedQuery.replace(pattern, (match) => {
-            let result = match.trim();
+    modifiedQuery = modifiedQuery.replace(pattern, (match) => {
+      let result = match.trim();
 
-            if (columnConstraints.notNull && !result.includes('NOT NULL'))
-                result += ' NOT NULL';
+      if (columnConstraints.notNull && !result.includes("NOT NULL")) {
+        result += " NOT NULL";
+      }
 
-            if (columnConstraints.default && !result.includes('DEFAULT'))
-                result += ` DEFAULT ${columnConstraints.default}`;
+      if (columnConstraints.default && !result.includes("DEFAULT")) {
+        result += ` DEFAULT ${columnConstraints.default}`;
+      }
 
-            if (columnConstraints.unique && !result.includes('UNIQUE'))
-                result += ' UNIQUE';
+      if (columnConstraints.unique && !result.includes("UNIQUE")) {
+        result += " UNIQUE";
+      }
 
-            return result;
-        });
+      return result;
+    });
+  }
+
+  // 2. Procesar Foreign Keys
+  if (foreignKeys && Object.keys(foreignKeys).length > 0) {
+    const lastParenIndex = modifiedQuery.lastIndexOf(")");
+
+    if (lastParenIndex !== -1) {
+      const foreignKeysConstraints = (Object.entries(foreignKeys) as [
+        SourceColumn,
+        ForeignKeyConstraint<TargetTable, TargetColumn>,
+      ][])
+        .map(([columnName, fkInfo]) => {
+          let constraint =
+            `,\n  CONSTRAINT "fk_${columnName}" FOREIGN KEY ("${columnName}") `;
+          constraint += `REFERENCES ${fkInfo.table}("${fkInfo.column}")`;
+
+          if (fkInfo.onDelete) {
+            constraint += ` ON DELETE ${fkInfo.onDelete}`;
+          }
+
+          if (fkInfo.onUpdate) {
+            constraint += ` ON UPDATE ${fkInfo.onUpdate}`;
+          }
+
+          return constraint;
+        }).join("");
+
+      modifiedQuery = modifiedQuery.slice(0, lastParenIndex) +
+        foreignKeysConstraints + modifiedQuery.slice(lastParenIndex);
     }
+  }
 
-    if (foreignKeys && Object.keys(foreignKeys).length > 0) {
-        const lastParenIndex = modifiedQuery.lastIndexOf(')');
+  // 3. NUEVO: Procesar Constraints a Nivel de Tabla (Composite UNIQUE, CHECK, etc.)
+  if (tableConstraints && tableConstraints.length > 0) {
+    const lastParenIndex = modifiedQuery.lastIndexOf(")");
 
-        if (lastParenIndex !== -1) {
-            const foreignKeysConstraints = (Object.entries(foreignKeys) as [SourceColumn, ForeignKeyConstraint<TargetTable, TargetColumn>][])
-                .map(([columnName, fkInfo]) => {
-                    let constraint = `,\n  CONSTRAINT "fk_${columnName}" FOREIGN KEY ("${columnName}") `;
-                    constraint += `REFERENCES ${fkInfo.table}("${fkInfo.column}")`;
-
-                    if (fkInfo.onDelete)
-                        constraint += ` ON DELETE ${fkInfo.onDelete}`;
-
-                    if (fkInfo.onUpdate)
-                        constraint += ` ON UPDATE ${fkInfo.onUpdate}`;
-
-                    return constraint;
-                }).join('');
-
-            modifiedQuery = modifiedQuery.slice(0, lastParenIndex) + foreignKeysConstraints + modifiedQuery.slice(lastParenIndex);
-        }
+    if (lastParenIndex !== -1) {
+      const tableConstraintsStr = tableConstraints.map((constraint) =>
+        `,\n  ${constraint}`
+      ).join("");
+      modifiedQuery = modifiedQuery.slice(0, lastParenIndex) +
+        tableConstraintsStr + modifiedQuery.slice(lastParenIndex);
     }
+  }
 
-    return modifiedQuery;
+  return modifiedQuery;
 }
-
 
 /**
  * Generates SQL commands to create functions and triggers in PostgreSQL with advanced configuration options.
  * This function allows defining PostgreSQL functions and associating them with triggers
  * on specific tables with highly configurable parameters including column selection and cross-table references.
- * 
+ *
  * @param functionName - Name of the function to create
  * @param config - Configuration object for the function and triggers
  * @returns SQL commands to create the function and its associated triggers
- * 
+ *
  * @example
  * // Creates a notification function that tracks changes in specific columns
  * createFunctionAndTrigger(
@@ -909,214 +1170,265 @@ export function applyColumnConstraints<
  * );
  */
 export function createFunctionAndTrigger<
-    TrackColumn extends string = string,
-    TableName extends string = string,
-    JoinTableName extends string = string,
-    JoinColumn extends string = string,
-    SourceColumn extends string = string,
-    SelectColumns extends string = string
+  TrackColumn extends string = string,
+  TableName extends string = string,
+  JoinTableName extends string = string,
+  JoinColumn extends string = string,
+  SourceColumn extends string = string,
+  SelectColumns extends string = string,
 >(
-    functionName: string,
-    config: FunctionConfig<TrackColumn, TableName, JoinTableName, JoinColumn, SourceColumn, SelectColumns>
+  functionName: string,
+  config: FunctionConfig<
+    TrackColumn,
+    TableName,
+    JoinTableName,
+    JoinColumn,
+    SourceColumn,
+    SelectColumns
+  >,
 ): string {
-    // Create the function definition
-    let sql = `CREATE OR REPLACE FUNCTION ${functionName}(`;
+  // Create the function definition
+  let sql = `CREATE OR REPLACE FUNCTION ${functionName}(`;
 
-    // Add parameters if they exist
-    if (config.functionParams && Object.keys(config.functionParams).length > 0) {
-        sql += Object.entries(config.functionParams).map(([paramName, paramConfig]) => {
-            // Verificar que paramConfig no sea undefined
-            if (!paramConfig) return '';
+  // Add parameters if they exist
+  if (config.functionParams && Object.keys(config.functionParams).length > 0) {
+    sql += Object.entries(config.functionParams).map(
+      ([paramName, paramConfig]) => {
+        // Verificar que paramConfig no sea undefined
+        if (!paramConfig) return "";
 
-            let paramDef = `${paramName} ${paramConfig.type}`;
-            if (paramConfig.defaultValue !== undefined) {
-                paramDef += ` DEFAULT ${paramConfig.defaultValue}`;
-            }
-            return paramDef;
-        }).filter(Boolean).join(', ');
-    }
+        let paramDef = `${paramName} ${paramConfig.type}`;
+        if (paramConfig.defaultValue !== undefined) {
+          paramDef += ` DEFAULT ${paramConfig.defaultValue}`;
+        }
+        return paramDef;
+      },
+    ).filter(Boolean).join(", ");
+  }
 
-    sql += `) RETURNS ${config.returnType || 'TRIGGER'} AS $$\n`;
+  sql += `) RETURNS ${config.returnType || "TRIGGER"} AS $$\n`;
 
-    // Determine if this is a trigger function (either explicitly specified or by default)
-    const isTriggerFunction = config.returnType === undefined || config.returnType === 'TRIGGER';
+  // Determine if this is a trigger function (either explicitly specified or by default)
+  const isTriggerFunction = config.returnType === undefined ||
+    config.returnType === "TRIGGER";
 
-    // If custom body is provided, use it
-    if (config.customBody) {
-        sql += config.customBody;
+  // If custom body is provided, use it
+  if (config.customBody) {
+    sql += config.customBody;
+  } else {
+    // Generate function body based on configuration
+    let functionBody = "";
+
+    // Get tracked columns as arrays for convenience
+    const trackNewColumns = config.trackNewValues
+      ? Object.keys(config.trackNewValues).filter((key) =>
+        config.trackNewValues![key as TrackColumn]
+      )
+      : [];
+    const trackOldColumns = config.trackOldValues
+      ? Object.keys(config.trackOldValues).filter((key) =>
+        config.trackOldValues![key as TrackColumn]
+      )
+      : [];
+    const joinTableNames = config.joinTables
+      ? Object.keys(config.joinTables)
+      : [];
+
+    // Declare section for variables if needed
+    const needsDeclare = joinTableNames.length > 0 ||
+      trackNewColumns.length > 0 || trackOldColumns.length > 0;
+
+    if (needsDeclare) {
+      functionBody += "DECLARE\n  payload JSONB;\n";
+
+      // Add variables for join results
+      if (joinTableNames.length > 0) {
+        joinTableNames.forEach((tableName) => {
+          functionBody += `  ${tableName}_data JSONB;\n`;
+        });
+      }
+
+      functionBody += "BEGIN\n";
+
+      // Initialize the payload
+      functionBody += "  -- Initialize the payload\n";
+      functionBody += "  payload = jsonb_build_object(\n";
+      functionBody += "    'table', TG_TABLE_NAME,\n";
+      functionBody += "    'action', TG_OP";
+
+      if (config.topLevelIdentifier) {
+        functionBody +=
+          `,\n    '${config.topLevelIdentifier}', NEW.${config.topLevelIdentifier}`;
+      }
+
+      // Add new values tracking
+      if (trackNewColumns.length > 0) {
+        functionBody += ",\n    'new_values', jsonb_build_object(\n";
+
+        // Add each tracked column
+        functionBody += trackNewColumns.map((col) =>
+          `      '${col}', NEW.${col}`
+        ).join(",\n");
+
+        functionBody += "\n    )";
+      }
+
+      functionBody += "\n  );\n\n";
+
+      // Add old values tracking for UPDATE operations
+      if (trackOldColumns.length > 0) {
+        functionBody += "  -- Add old values for UPDATE operations\n";
+        functionBody += "  IF TG_OP = 'UPDATE' THEN\n";
+        functionBody += "    payload = payload || jsonb_build_object(\n";
+        functionBody += "      'old_values', jsonb_build_object(\n";
+
+        // Add each tracked old column
+        functionBody += trackOldColumns.map((col) =>
+          `        '${col}', OLD.${col}`
+        ).join(",\n");
+
+        functionBody += "\n      )\n";
+        functionBody += "    );\n";
+        functionBody += "  END IF;\n\n";
+      }
+
+      // Process joins
+      if (joinTableNames.length > 0 && config.joinTables) {
+        joinTableNames.forEach((tableName) => {
+          const join = config.joinTables?.[tableName as JoinTableName];
+
+          // Verificar que join no sea undefined
+          if (!join) return;
+
+          const selectColumnNames = Object.keys(join.selectColumns)
+            .filter((key) => join.selectColumns[key as SelectColumns]);
+
+          functionBody += `  -- Join with ${tableName} table\n`;
+          functionBody += `  SELECT jsonb_build_object(\n`;
+
+          // Add each selected column
+          functionBody += selectColumnNames.map((col) => `    '${col}', ${col}`)
+            .join(",\n");
+
+          functionBody += `\n  ) INTO ${tableName}_data\n`;
+          functionBody += `  FROM ${tableName}\n`;
+          functionBody +=
+            `  WHERE ${join.joinColumn} = NEW.${join.sourceColumn}`;
+
+          if (join.condition) {
+            functionBody += ` AND ${join.condition}`;
+          }
+
+          functionBody += `;\n\n`;
+
+          // Add joined data to payload
+          functionBody += `  -- Add joined data to payload\n`;
+          functionBody +=
+            `  payload = payload || jsonb_build_object('${tableName}', ${tableName}_data);\n\n`;
+        });
+      }
+
+      // Add notification if channel is specified
+      if (config.channelName) {
+        functionBody += `  -- Send notification\n`;
+        functionBody +=
+          `  PERFORM pg_notify('${config.channelName}', payload::text);\n\n`;
+      }
+
+      // Always add an appropriate RETURN statement for trigger functions
+      if (isTriggerFunction) {
+        functionBody += "  -- Return for trigger function\n";
+        functionBody += "  RETURN NEW;\n";
+      } else {
+        // For non-trigger functions, add a generic RETURN
+        functionBody += "  -- Return for non-trigger function\n";
+        functionBody += "  RETURN;\n";
+      }
+
+      functionBody += "END;";
     } else {
-        // Generate function body based on configuration
-        let functionBody = '';
+      // Simple body without declarations
+      functionBody = "BEGIN\n";
 
-        // Get tracked columns as arrays for convenience
-        const trackNewColumns = config.trackNewValues ? Object.keys(config.trackNewValues).filter(key => config.trackNewValues![key as TrackColumn]) : [];
-        const trackOldColumns = config.trackOldValues ? Object.keys(config.trackOldValues).filter(key => config.trackOldValues![key as TrackColumn]) : [];
-        const joinTableNames = config.joinTables ? Object.keys(config.joinTables) : [];
-
-        // Declare section for variables if needed
-        const needsDeclare = joinTableNames.length > 0 || trackNewColumns.length > 0 || trackOldColumns.length > 0;
-
-        if (needsDeclare) {
-            functionBody += "DECLARE\n  payload JSONB;\n";
-
-            // Add variables for join results
-            if (joinTableNames.length > 0) {
-                joinTableNames.forEach(tableName => {
-                    functionBody += `  ${tableName}_data JSONB;\n`;
-                });
-            }
-
-            functionBody += "BEGIN\n";
-
-            // Initialize the payload
-            functionBody += "  -- Initialize the payload\n";
-            functionBody += "  payload = jsonb_build_object(\n";
-            functionBody += "    'table', TG_TABLE_NAME,\n";
-            functionBody += "    'action', TG_OP";
-
-			if (config.topLevelIdentifier) {
-    			functionBody += `,\n    '${config.topLevelIdentifier}', NEW.${config.topLevelIdentifier}`;
-			}
-
-            // Add new values tracking
-            if (trackNewColumns.length > 0) {
-                functionBody += ",\n    'new_values', jsonb_build_object(\n";
-
-                // Add each tracked column
-                functionBody += trackNewColumns.map(col =>
-                    `      '${col}', NEW.${col}`
-                ).join(',\n');
-
-                functionBody += "\n    )";
-            }
-
-            functionBody += "\n  );\n\n";
-
-            // Add old values tracking for UPDATE operations
-            if (trackOldColumns.length > 0) {
-                functionBody += "  -- Add old values for UPDATE operations\n";
-                functionBody += "  IF TG_OP = 'UPDATE' THEN\n";
-                functionBody += "    payload = payload || jsonb_build_object(\n";
-                functionBody += "      'old_values', jsonb_build_object(\n";
-
-                // Add each tracked old column
-                functionBody += trackOldColumns.map(col =>
-                    `        '${col}', OLD.${col}`
-                ).join(',\n');
-
-                functionBody += "\n      )\n";
-                functionBody += "    );\n";
-                functionBody += "  END IF;\n\n";
-            }
-
-            // Process joins
-            if (joinTableNames.length > 0 && config.joinTables) {
-                joinTableNames.forEach(tableName => {
-                    const join = config.joinTables?.[tableName as JoinTableName];
-
-                    // Verificar que join no sea undefined
-                    if (!join) return;
-
-                    const selectColumnNames = Object.keys(join.selectColumns)
-                        .filter(key => join.selectColumns[key as SelectColumns]);
-
-                    functionBody += `  -- Join with ${tableName} table\n`;
-                    functionBody += `  SELECT jsonb_build_object(\n`;
-
-                    // Add each selected column
-                    functionBody += selectColumnNames.map(col =>
-                        `    '${col}', ${col}`
-                    ).join(',\n');
-
-                    functionBody += `\n  ) INTO ${tableName}_data\n`;
-                    functionBody += `  FROM ${tableName}\n`;
-                    functionBody += `  WHERE ${join.joinColumn} = NEW.${join.sourceColumn}`;
-
-                    if (join.condition) {
-                        functionBody += ` AND ${join.condition}`;
-                    }
-
-                    functionBody += `;\n\n`;
-
-                    // Add joined data to payload
-                    functionBody += `  -- Add joined data to payload\n`;
-                    functionBody += `  payload = payload || jsonb_build_object('${tableName}', ${tableName}_data);\n\n`;
-                });
-            }
-
-            // Add notification if channel is specified
-            if (config.channelName) {
-                functionBody += `  -- Send notification\n`;
-                functionBody += `  PERFORM pg_notify('${config.channelName}', payload::text);\n\n`;
-            }
-
-            // Always add an appropriate RETURN statement for trigger functions
-            if (isTriggerFunction) {
-                functionBody += "  -- Return for trigger function\n";
-                functionBody += "  RETURN NEW;\n";
-            } else {
-                // For non-trigger functions, add a generic RETURN
-                functionBody += "  -- Return for non-trigger function\n";
-                functionBody += "  RETURN;\n";
-            }
-
-            functionBody += "END;";
+      // Add notification to empty function if channel is specified
+      if (config.channelName) {
+        if (isTriggerFunction) {
+          functionBody +=
+            `  PERFORM pg_notify('${config.channelName}', row_to_json(NEW)::text);\n\n`;
         } else {
-            // Simple body without declarations
-            functionBody = "BEGIN\n";
-
-            // Add notification to empty function if channel is specified
-            if (config.channelName) {
-                if (isTriggerFunction) {
-                    functionBody += `  PERFORM pg_notify('${config.channelName}', row_to_json(NEW)::text);\n\n`;
-                } else {
-                    functionBody += `  PERFORM pg_notify('${config.channelName}', '{}'::text);\n\n`;
-                }
-            }
-
-            // Always add appropriate RETURN statement
-            if (isTriggerFunction) {
-                functionBody += "  -- Return for trigger function\n";
-                functionBody += "  RETURN NEW;\n";
-            } else {
-                functionBody += "  -- Return for non-trigger function\n";
-                functionBody += "  RETURN;\n";
-            }
-
-            functionBody += "END;";
+          functionBody +=
+            `  PERFORM pg_notify('${config.channelName}', '{}'::text);\n\n`;
         }
+      }
 
-        sql += functionBody;
+      // Always add appropriate RETURN statement
+      if (isTriggerFunction) {
+        functionBody += "  -- Return for trigger function\n";
+        functionBody += "  RETURN NEW;\n";
+      } else {
+        functionBody += "  -- Return for non-trigger function\n";
+        functionBody += "  RETURN;\n";
+      }
+
+      functionBody += "END;";
     }
 
-    // Close function definition
-    sql += `\n$$ LANGUAGE ${config.language || 'plpgsql'};\n`;
+    sql += functionBody;
+  }
 
-    // Create the associated triggers
-    if (config.triggers) {
-        for (const [triggerName, trigger] of Object.entries(config.triggers)) {
-            sql += `\nCREATE OR REPLACE TRIGGER ${triggerName}\n`;
-            sql += `${trigger.timing} `;
+  // Close function definition
+  sql += `\n$$ LANGUAGE ${config.language || "plpgsql"};\n`;
 
-            // Process events
-            const events = Object.entries(trigger.events)
-                .filter(([_, isEnabled]) => isEnabled)
-                .map(([eventName, _]) => eventName);
+  // Create the associated triggers
+  if (config.triggers) {
+    for (const [triggerName, trigger] of Object.entries(config.triggers)) {
+      sql += `\nCREATE OR REPLACE TRIGGER ${triggerName}\n`;
+      sql += `${trigger.timing} `;
 
-            sql += `${events.join(' OR ')} ON "${trigger.tableName}"\n`;
-            sql += `FOR EACH ${trigger.forEach}\n`;
+      // Process events
+      const events = Object.entries(trigger.events)
+        .filter(([_, isEnabled]) => isEnabled)
+        .map(([eventName, _]) => eventName);
 
-            if (trigger.condition) {
-                sql += `WHEN (${trigger.condition})\n`;
-            }
+      sql += `${events.join(" OR ")} ON "${trigger.tableName}"\n`;
+      sql += `FOR EACH ${trigger.forEach}\n`;
 
-            sql += `EXECUTE FUNCTION ${functionName}();\n`;
-        }
+      if (trigger.condition) {
+        sql += `WHEN (${trigger.condition})\n`;
+      }
+
+      sql += `EXECUTE FUNCTION ${functionName}();\n`;
     }
+  }
 
-    return sql;
+  return sql;
 }
 
+/**
+ * Helper to build WHERE clauses supporting both primitive values and QueryCondition objects.
+ */
+function buildWhereClause(
+  whr: RowData,
+  defaultOp: string,
+  sep: string,
+  startIndex: number,
+  par: unknown[],
+): string {
+  const conditions: string[] = [];
+  let index = startIndex;
+
+  for (const [k, v] of Object.entries(whr || {})) {
+    if (isQueryCondition(v)) {
+      conditions.push(`"${k}" ${v.op} $${index++}`);
+      par.push(v.val);
+    } else {
+      conditions.push(`"${k}" ${defaultOp} $${index++}`);
+      par.push(v);
+    }
+  }
+
+  return conditions.join(` ${sep} `);
+}
 
 // /**
 //  * Convert Linux wildcard patterns to SQL LIKE patterns.
@@ -1126,7 +1438,6 @@ export function createFunctionAndTrigger<
 // function fromLinuxWildcard(txt: string | null): string | null {
 //   return txt ? txt.replace(/\*/g, '%').replace(/\?/g, '_') : txt;
 // }
-
 
 // /**
 //  * Generate SQL command for INSERT INTO using a stream of values.

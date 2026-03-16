@@ -5,14 +5,13 @@ on:
       - main
       - master
     tags:
-      - '!*'  # Do not execute on tags
+      - "!*" # Do not execute on tags
 env:
-  NAME:  ${{vars.NAME}}
+  NAME: ${{vars.NAME}}
   EMAIL: ${{vars.EMAIL}}
-  NPM_TOKEN:    ${{secrets.NPM_TOKEN}}
+  NPM_TOKEN: ${{secrets.NPM_TOKEN}}
   GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
   FORCE_COLOR: 1
-
 
 jobs:
   test:
@@ -27,7 +26,6 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno test
-
 
   publish:
     name: Publish package

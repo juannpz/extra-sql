@@ -3,7 +3,6 @@ on: [pull_request]
 env:
   FORCE_COLOR: 1
 
-
 jobs:
   test:
     strategy:
