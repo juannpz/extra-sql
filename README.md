@@ -1,10 +1,8 @@
-[SQL] is designed for managing or stream processing data in an RDBMS. This
-package provides a set of functions to generate SQL commands for creating
-tables, inserting data, and performing various operations, including text search
-and matching, on SQL databases (PostgreSQL).
+[SQL] is designed for managing or stream processing data in an RDBMS. This package provides a set of
+functions to generate SQL commands for creating tables, inserting data, and performing various
+operations, including text search and matching, on SQL databases (PostgreSQL).
 
-▌ 📦 [JSR](https://jsr.io/@nodef/extra-sql), 📰
-[Docs](https://jsr.io/@nodef/extra-sql/doc),
+▌ 📦 [JSR](https://jsr.io/@nodef/extra-sql), 📰 [Docs](https://jsr.io/@nodef/extra-sql/doc),
 
 <br>
 
@@ -15,8 +13,8 @@ xsql.tableExists("food");
 // → SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='food');
 
 xsql.setupTable("food", { code: "TEXT", name: "TEXT" }, [{
-  code: "F1",
-  name: "Mango",
+    code: "F1",
+    name: "Mango",
 }, { code: "F2", name: "Lychee" }]);
 // → CREATE TABLE IF NOT EXISTS "food" ("code" TEXT, "name" TEXT);
 // → INSERT INTO "food" ("code", "name") VALUES
