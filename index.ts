@@ -434,6 +434,14 @@ export function createIndex(
     return acc + `(${expr});\n`;
 }
 
+export function createUniqueIndex<Table extends string>(
+    indexName: string,
+    tableName: Table,
+    columns: string,
+): string {
+    return `CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON ${tableName} (${columns});`;
+}
+
 /**
  * Generate SQL command for CREATE VIEW.
  * @param name view name
