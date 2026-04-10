@@ -753,6 +753,32 @@ export function updateData(
     };
 }
 
+export function incrementData(
+    table: string,
+    increments: RowData, 
+    where: RowData,
+    par: unknown[] = [] // Array para recolectar parámetros
+): QueryData {
+    // 1. Calculamos el índice inicial (normalmente 1)
+    const startIndex = par.length + 1;
+    
+    // 2. Construimos el SET y pusheamos los valores de incremento al array 'par'
+    const setStr = Object.keys(increments)
+        .map((k, idx) => {
+            par.push(increments[k]); // El valor va al array
+            return `"${k}" = "${k}" + $${startIndex + idx}`; // El placeholder coincide con la posición
+        })
+        .join(", ");
+
+    // 3. Construimos el WHERE. buildWhereClause ya se encarga de pushear al array 'par'
+    const exp = buildWhereClause(where, "=", "AND", par.length + 1, par);
+    
+    return {
+        query: `UPDATE "${table}" SET ${setStr}${exp ? " WHERE " + exp : ""} RETURNING *;`,
+        data: par, // Retornamos el array que ya contiene todo en orden
+    };
+}
+
 /**
  * Generate SQL command for selecting data.
  * @param tab table name
