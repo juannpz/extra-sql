@@ -755,13 +755,13 @@ export function updateData(
 
 export function incrementData(
     table: string,
-    increments: RowData, 
+    increments: RowData,
     where: RowData,
-    par: unknown[] = [] // Array para recolectar parámetros
+    par: unknown[] = [], // Array para recolectar parámetros
 ): QueryData {
     // 1. Calculamos el índice inicial (normalmente 1)
     const startIndex = par.length + 1;
-    
+
     // 2. Construimos el SET y pusheamos los valores de incremento al array 'par'
     const setStr = Object.keys(increments)
         .map((k, idx) => {
@@ -772,7 +772,7 @@ export function incrementData(
 
     // 3. Construimos el WHERE. buildWhereClause ya se encarga de pushear al array 'par'
     const exp = buildWhereClause(where, "=", "AND", par.length + 1, par);
-    
+
     return {
         query: `UPDATE "${table}" SET ${setStr}${exp ? " WHERE " + exp : ""} RETURNING *;`,
         data: par, // Retornamos el array que ya contiene todo en orden
@@ -1473,8 +1473,16 @@ function buildWhereClause(
 
     for (const [k, v] of Object.entries(whr || {})) {
         if (isQueryCondition(v)) {
-            conditions.push(`"${k}" ${v.op} $${index++}`);
-            par.push(v.val);
+            const opUpper = (v.op as string).toUpperCase();
+            if (opUpper === "IN" && Array.isArray(v.val)) {
+                const arr = v.val as unknown[];
+                const placeholders = arr.map(() => `$${index++}`);
+                conditions.push(`"${k}" ${v.op} (${placeholders.join(", ")})`);
+                par.push(...arr);
+            } else {
+                conditions.push(`"${k}" ${v.op} $${index++}`);
+                par.push(v.val);
+            }
         } else {
             conditions.push(`"${k}" ${defaultOp} $${index++}`);
             par.push(v);
