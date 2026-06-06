@@ -565,25 +565,25 @@ export class ConstraintManager {
  */
 export class SqlBuilder {
     /** Table DDL operations (CREATE TABLE, exists, setup). */
-    readonly table = new TableManager();
+    readonly table: TableManager = new TableManager();
 
     /** Index operations (CREATE INDEX, unique indexes, index setup). */
-    readonly index = new IndexManager();
+    readonly index: IndexManager = new IndexManager();
 
     /** View operations (CREATE VIEW, structured view building). */
-    readonly view = new ViewManager();
+    readonly view: ViewManager = new ViewManager();
 
     /** Data manipulation operations (INSERT, UPDATE, DELETE, SELECT). */
-    readonly data = new DataManager();
+    readonly data: DataManager = new DataManager();
 
     /** Full-text search operations. */
-    readonly fts = new FtsManager();
+    readonly fts: FtsManager = new FtsManager();
 
     /** Function and trigger generation. */
-    readonly func = new FunctionManager();
+    readonly func: FunctionManager = new FunctionManager();
 
     /** Column constraint application. */
-    readonly constraint = new ConstraintManager();
+    readonly constraint: ConstraintManager = new ConstraintManager();
 }
 
 //#endregion
